@@ -11,6 +11,7 @@ import (
 const (
 	Direct AdapterType = iota
 	Reject
+	Pass
 
 	Shadowsocks
 	ShadowsocksR
@@ -119,6 +120,8 @@ func (at AdapterType) String() string {
 		return "Direct"
 	case Reject:
 		return "Reject"
+	case Pass:
+		return "Pass"
 
 	case Shadowsocks:
 		return "Shadowsocks"
