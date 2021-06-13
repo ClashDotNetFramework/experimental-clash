@@ -233,5 +233,5 @@ func getLogs(w http.ResponseWriter, r *http.Request) {
 }
 
 func version(w http.ResponseWriter, r *http.Request) {
-	render.JSON(w, r, render.M{"version": C.Version})
+	render.JSON(w, r, render.M{"experimental": true, "version": C.Version})
 }
