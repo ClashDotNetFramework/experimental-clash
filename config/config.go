@@ -278,7 +278,7 @@ func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providersMap map[
 	proxies["DIRECT"] = adapter.NewProxy(outbound.NewDirect())
 	proxies["REJECT"] = adapter.NewProxy(outbound.NewReject())
 	proxies["PASS"] = adapter.NewProxy(outbound.NewPass())
-	proxyList = append(proxyList, "DIRECT", "REJECT")
+	proxyList = append(proxyList, "DIRECT", "REJECT", "PASS")
 
 	// parse proxy
 	for idx, mapping := range proxiesConfig {
