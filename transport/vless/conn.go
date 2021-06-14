@@ -10,13 +10,15 @@ import (
 
 	"github.com/Dreamacro/clash/transport/vmess"
 	"github.com/gofrs/uuid"
+	xtls "github.com/xtls/go"
+	"google.golang.org/protobuf/proto"
 )
 
 type Conn struct {
 	net.Conn
-	dst *vmess.DstAddr
-	id  *uuid.UUID
-
+	dst      *vmess.DstAddr
+	id       *uuid.UUID
+	addons   *Addons
 	received bool
 }
 
@@ -37,7 +39,17 @@ func (vc *Conn) sendRequest() error {
 
 	buf.WriteByte(Version)   // protocol version
 	buf.Write(vc.id.Bytes()) // 16 bytes of uuid
-	buf.WriteByte(0)         // addon data length. 0 means no addon data
+	if vc.addons != nil {
+		bytes, err := proto.Marshal(vc.addons)
+		if err != nil {
+			return err
+		}
+
+		buf.WriteByte(byte(len(bytes)))
+		buf.Write(bytes)
+	} else {
+		buf.WriteByte(0) // addon data length. 0 means no addon data
+	}
 
 	// command
 	if vc.dst.UDP {
@@ -81,11 +93,24 @@ func (vc *Conn) recvResponse() error {
 }
 
 // newConn return a Conn instance
-func newConn(conn net.Conn, id *uuid.UUID, dst *vmess.DstAddr) (*Conn, error) {
+func newConn(conn net.Conn, client *Client, dst *vmess.DstAddr) (*Conn, error) {
 	c := &Conn{
+		id:   client.UUID,
 		Conn: conn,
-		id:   id,
 		dst:  dst,
+	}
+	if !dst.UDP && client.Addons != nil {
+		switch client.Addons.Flow {
+		case XRO, XRD, XROU, XRDU:
+			if xtlsConn, ok := conn.(*xtls.Conn); ok {
+				c.addons = client.Addons
+				xtlsConn.RPRX = true
+
+				if client.Addons.Flow == XRD || client.Addons.Flow == XRDU {
+					xtlsConn.DirectMode = true
+				}
+			}
+		}
 	}
 	if err := c.sendRequest(); err != nil {
 		return nil, err

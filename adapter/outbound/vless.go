@@ -14,14 +14,15 @@ import (
 
 	"github.com/Dreamacro/clash/component/dialer"
 	"github.com/Dreamacro/clash/component/resolver"
-	C "github.com/Dreamacro/clash/constant"
 	"github.com/Dreamacro/clash/transport/vless"
 	"github.com/Dreamacro/clash/transport/vmess"
+	C "github.com/Dreamacro/clash/constant"
+	xtls "github.com/xtls/go"
 )
 
 const (
 	// max packet length
-	maxLength = 2046
+	maxLength = 8192
 )
 
 var bufPool = sync.Pool{New: func() interface{} { return &bytes.Buffer{} }}
@@ -44,6 +45,7 @@ type VlessOption struct {
 	WSHeaders      map[string]string `proxy:"ws-headers,omitempty"`
 	SkipCertVerify bool              `proxy:"skip-cert-verify,omitempty"`
 	ServerName     string            `proxy:"servername,omitempty"`
+	Flow           string            `proxy:"flow,omitempty"`
 }
 
 func (v *Vless) StreamConn(c net.Conn, metadata *C.Metadata) (net.Conn, error) {
@@ -76,20 +78,40 @@ func (v *Vless) StreamConn(c net.Conn, metadata *C.Metadata) (net.Conn, error) {
 		// handle TLS
 		if v.option.TLS {
 			host, _, _ := net.SplitHostPort(v.addr)
-			tlsConfig := &tls.Config{
-				ServerName:         host,
-				InsecureSkipVerify: v.option.SkipCertVerify,
-				ClientSessionCache: getClientSessionCache(),
-			}
-			if v.option.ServerName != "" {
-				tlsConfig.ServerName = v.option.ServerName
-			}
-			tlsConn := tls.Client(c, tlsConfig)
-			if err = tlsConn.Handshake(); err != nil {
-				return nil, err
+
+			if v.option.Flow == vless.XRO || v.option.Flow == vless.XROU || v.option.Flow == vless.XRD || v.option.Flow == vless.XRDU {
+				xtlsConfig := &xtls.Config{
+					ServerName:         host,
+					InsecureSkipVerify: v.option.SkipCertVerify,
+					ClientSessionCache: getClientXSessionCache(),
+				}
+
+				if v.option.ServerName != "" {
+					xtlsConfig.ServerName = v.option.ServerName
+				}
+				xtlsConn := xtls.Client(c, xtlsConfig)
+				if err = xtlsConn.Handshake(); err != nil {
+					return nil, err
+				}
+
+				c = xtlsConn
+			} else {
+				tlsConfig := &tls.Config{
+					ServerName:         host,
+					InsecureSkipVerify: v.option.SkipCertVerify,
+					ClientSessionCache: getClientSessionCache(),
+				}
+				if v.option.ServerName != "" {
+					tlsConfig.ServerName = v.option.ServerName
+				}
+				tlsConn := tls.Client(c, tlsConfig)
+				if err = tlsConn.Handshake(); err != nil {
+					return nil, err
+				}
+
+				c = tlsConn
 			}
 
-			c = tlsConn
 		}
 	}
 
@@ -112,6 +134,10 @@ func (v *Vless) DialContext(ctx context.Context, metadata *C.Metadata) (C.Conn, 
 }
 
 func (v *Vless) DialUDP(metadata *C.Metadata) (C.PacketConn, error) {
+	if (v.option.Flow == vless.XRO || v.option.Flow == vless.XRD) && metadata.DstPort == "443" {
+		return nil, fmt.Errorf("%s stopped UDP/443", v.option.Flow)
+	}
+
 	// vless use stream-oriented udp, so clash needs a net.UDPAddr
 	if !metadata.Resolved() {
 		ip, err := resolver.ResolveIP(metadata.Host)
@@ -136,7 +162,19 @@ func (v *Vless) DialUDP(metadata *C.Metadata) (C.PacketConn, error) {
 }
 
 func NewVless(option VlessOption) (*Vless, error) {
-	client, err := vless.NewClient(option.UUID)
+	var addons *vless.Addons
+	if option.TLS && option.Network != "ws" && option.Flow != "" {
+		switch option.Flow {
+		case vless.XRO, vless.XRD, vless.XROU, vless.XRDU:
+			addons = &vless.Addons{
+				Flow: option.Flow,
+			}
+		default:
+			return nil, fmt.Errorf("unsupported vless flow type: %s", option.Flow)
+		}
+	}
+
+	client, err := vless.NewClient(option.UUID, addons)
 	if err != nil {
 		return nil, err
 	}
@@ -156,6 +194,7 @@ func NewVless(option VlessOption) (*Vless, error) {
 func newVlessPacketConn(c net.Conn, addr net.Addr) *vlessPacketConn {
 	return &vlessPacketConn{Conn: c,
 		rAddr: addr,
+		cache: make([]byte, 0, maxLength+2),
 	}
 }
 
@@ -164,22 +203,17 @@ type vlessPacketConn struct {
 	rAddr  net.Addr
 	remain int
 	mux    sync.Mutex
+	cache  []byte
 }
 
 func (c *vlessPacketConn) writePacket(b []byte, addr net.Addr) (int, error) {
 	length := len(b)
-	if length == 0 {
-		return 0, nil
-	}
-
-	buffer := bufPool.Get().(*bytes.Buffer)
-	defer bufPool.Put(buffer)
-	defer buffer.Reset()
-
-	buffer.WriteByte(byte(length >> 8))
-	buffer.WriteByte(byte(length))
-	buffer.Write(b)
-	n, err := c.Conn.Write(buffer.Bytes())
+	defer func() {
+		c.cache = c.cache[:0]
+	}()
+	c.cache = append(c.cache, byte(length>>8), byte(length))
+	c.cache = append(c.cache, b...)
+	n, err := c.Conn.Write(c.cache)
 	if n > 2 {
 		return n - 2, err
 	}

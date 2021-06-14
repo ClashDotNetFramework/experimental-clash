@@ -19,10 +19,10 @@ const (
 	// max packet length
 	maxLength = 8192
 
-	XRD = "xtls-rprx-direct"
 	XRO = "xtls-rprx-origin"
-	XRDU = "xtls-rprx-direct-udp443"
+	XRD = "xtls-rprx-direct"
 	XROU = "xtls-rprx-origin-udp443"
+	XRDU = "xtls-rprx-direct-udp443"
 )
 
 var (
@@ -68,7 +68,7 @@ func (t *Trojan) StreamConn(conn net.Conn) (net.Conn, error) {
 	}
 
 	switch t.option.Flow {
-	case XRD, XRDU, XRO, XROU:
+	case XRO, XROU, XRD, XRDU:
 		xtlsConfig := &xtls.Config{
 			NextProtos:         alpn,
 			MinVersion:         xtls.VersionTLS12,

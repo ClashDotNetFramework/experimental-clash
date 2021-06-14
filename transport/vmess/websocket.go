@@ -261,7 +261,7 @@ func StreamWebsocketConn(conn net.Conn, c *WebsocketConfig, ed []byte) (net.Conn
 	}
 
 	if ed != nil {
-		headers.Set("Sec-WebSocket-Protocol", base64.StdEncoding.EncodeToString(ed))
+		headers.Set("Sec-WebSocket-Protocol", base64.RawURLEncoding.EncodeToString(ed))
 	}
 
 	wsConn, resp, err := dialer.Dial(uri.String(), headers)

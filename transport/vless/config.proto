@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package transport.vless;
+option go_package = "transport/vless";
+
+message Addons {
+  string Flow = 1;
+  bytes Seed = 2;
+}
