@@ -11,9 +11,9 @@ import (
 	"github.com/Dreamacro/clash/transport/ssr/obfs"
 	"github.com/Dreamacro/clash/transport/ssr/protocol"
 
-	"github.com/Dreamacro/go-shadowsocks2/core"
-	"github.com/Dreamacro/go-shadowsocks2/shadowaead"
-	"github.com/Dreamacro/go-shadowsocks2/shadowstream"
+	"github.com/ClashDotNetFramework/go-shadowsocks2/core"
+	"github.com/ClashDotNetFramework/go-shadowsocks2/shadowaead"
+	"github.com/ClashDotNetFramework/go-shadowsocks2/shadowstream"
 )
 
 type ShadowSocksR struct {

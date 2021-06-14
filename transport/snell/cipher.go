@@ -4,7 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 
-	"github.com/Dreamacro/go-shadowsocks2/shadowaead"
+	"github.com/ClashDotNetFramework/go-shadowsocks2/shadowaead"
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/chacha20poly1305"
 )

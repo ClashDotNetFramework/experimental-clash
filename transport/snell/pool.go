@@ -7,7 +7,7 @@ import (
 
 	"github.com/Dreamacro/clash/component/pool"
 
-	"github.com/Dreamacro/go-shadowsocks2/shadowaead"
+	"github.com/ClashDotNetFramework/go-shadowsocks2/shadowaead"
 )
 
 type Pool struct {

@@ -9,7 +9,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/Dreamacro/go-shadowsocks2/shadowaead"
+	"github.com/ClashDotNetFramework/go-shadowsocks2/shadowaead"
 )
 
 const (
