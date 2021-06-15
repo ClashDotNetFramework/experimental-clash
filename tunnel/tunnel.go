@@ -327,7 +327,7 @@ func match(metadata *C.Metadata) (C.Proxy, C.Rule, error) {
 
 		if rule.Match(metadata) {
 			adapter, ok := proxies[rule.Adapter()]
-			if !ok || adapter.Type() == C.Pass || adapter.Unwrap(metadata).Type() == C.Pass {
+			if !ok || adapter.Type() == C.Pass || safeAssertProxyType(adapter, metadata, C.Pass) {
 				continue
 			}
 
