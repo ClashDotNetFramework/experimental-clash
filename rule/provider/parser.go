@@ -23,6 +23,7 @@ func ParseRuleProvider(name string, mapping map[string]interface{}) (RuleProvide
 		return nil, err
 	}
 	var behavior Behavior
+
 	switch schema.Behavior {
 	case "domain":
 		behavior = Domain
@@ -33,6 +34,7 @@ func ParseRuleProvider(name string, mapping map[string]interface{}) (RuleProvide
 	default:
 		return nil, fmt.Errorf("unsupported behavior type: %s", schema.Behavior)
 	}
+
 	path := C.Path.Resolve(schema.Path)
 	var vehicle provider.Vehicle
 	switch schema.Type {

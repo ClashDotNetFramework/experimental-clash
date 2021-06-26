@@ -2,7 +2,7 @@ package executor
 
 import (
 	"fmt"
-	provider2 "github.com/Dreamacro/clash/rule/provider"
+	ruleProvider "github.com/Dreamacro/clash/rule/provider"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -161,7 +161,7 @@ func updateProxies(proxies map[string]C.Proxy, providers map[string]provider.Pro
 	tunnel.UpdateProxies(proxies, providers)
 }
 
-func updateRules(rules []C.Rule, ruleProviders map[string]provider2.RuleProvider) {
+func updateRules(rules []C.Rule, ruleProviders map[string]ruleProvider.RuleProvider) {
 	tunnel.UpdateRules(rules, ruleProviders)
 }
 

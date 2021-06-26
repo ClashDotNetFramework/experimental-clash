@@ -2,7 +2,7 @@ package route
 
 import (
 	"context"
-	provider2 "github.com/Dreamacro/clash/rule/provider"
+	ruleProvider "github.com/Dreamacro/clash/rule/provider"
 	"net/http"
 
 	"github.com/Dreamacro/clash/adapter/provider"
@@ -93,15 +93,17 @@ func getRuleProviders(w http.ResponseWriter, r *http.Request) {
 		"providers": ruleProviders,
 	})
 }
+
 func updateRuleProvider(w http.ResponseWriter, r *http.Request) {
-	provider := r.Context().Value(CtxKeyProvider).(provider2.RuleProvider)
+	provider := r.Context().Value(CtxKeyProvider).(ruleProvider.RuleProvider)
 	if err := provider.Update(); err != nil {
 		render.Status(r, http.StatusServiceUnavailable)
 		render.JSON(w, r, newError(err.Error()))
 	}
-	render.NoContent(w, r)
 
+	render.NoContent(w, r)
 }
+
 func parseRuleProviderName(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		name := getEscapeParam(r, "name")

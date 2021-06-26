@@ -8,6 +8,7 @@ func TestAddSuccess(t *testing.T) {
 	err := trie.AddIpCidr("10.0.0.2/16")
 	assert.Equal(t, nil, err)
 }
+
 func TestAddFail(t *testing.T) {
 	trie := NewIpCidrTrie()
 	err := trie.AddIpCidr("333.00.23.2/23")

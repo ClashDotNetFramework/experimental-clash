@@ -3,7 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
-	provider2 "github.com/Dreamacro/clash/rule/provider"
+	ruleProvider "github.com/Dreamacro/clash/rule/provider"
 	"net"
 	"net/url"
 	"os"
@@ -95,7 +95,7 @@ type Config struct {
 	Users         []auth.AuthUser
 	Proxies       map[string]C.Proxy
 	Providers     map[string]provider.ProxyProvider
-	RuleProviders map[string]provider2.RuleProvider
+	RuleProviders map[string]ruleProvider.RuleProvider
 }
 
 type RawDNS struct {
@@ -377,23 +377,25 @@ func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providersMap map[
 	return proxies, providersMap, nil
 }
 
-func parseRules(cfg *RawConfig, proxies map[string]C.Proxy) ([]C.Rule, map[string]provider2.RuleProvider, error) {
-	ruleProvider := map[string]provider2.RuleProvider{}
+func parseRules(cfg *RawConfig, proxies map[string]C.Proxy) ([]C.Rule, map[string]ruleProvider.RuleProvider, error) {
+	ruleProviders := map[string]ruleProvider.RuleProvider{}
 
 	for name, mapping := range cfg.RuleProvider {
-		rp, err := provider2.ParseRuleProvider(name, mapping)
+		rp, err := ruleProvider.ParseRuleProvider(name, mapping)
 		if err != nil {
 			return nil, nil, err
 		}
-		ruleProvider[name] = rp
+
+		ruleProviders[name] = rp
 	}
 
-	for _, provider := range ruleProvider {
+	for _, provider := range ruleProviders {
 		log.Infoln("Start initial provider %s", provider.Name())
 		if err := provider.Initial(); err != nil {
 			return nil, nil, fmt.Errorf("initial rule provider %s error: %w", provider.Name(), err)
 		}
 	}
+
 	rules := []C.Rule{}
 	rulesConfig := cfg.Rule
 
@@ -432,15 +434,15 @@ func parseRules(cfg *RawConfig, proxies map[string]C.Proxy) ([]C.Rule, map[strin
 		)
 
 		if rule[0] == "RULE-SET" {
-			rp, ok := ruleProvider[payload]
+			rp, ok := ruleProviders[payload]
 			if !ok {
 				return nil, nil, fmt.Errorf("rules[%d] [%s] error: RULE-SET [%s] not found", idx, line, rule[1])
 			}
-			parsed = provider2.NewRuleSet(rp, target)
+			parsed = ruleProvider.NewRuleSet(rp, target)
 		} else {
-
 			parsed, parseErr = R.ParseRule(rule[0], payload, target, params)
 		}
+
 		if parseErr != nil {
 			return nil, nil, fmt.Errorf("rules[%d] [%s] error: %s", idx, line, parseErr.Error())
 		}
@@ -448,7 +450,7 @@ func parseRules(cfg *RawConfig, proxies map[string]C.Proxy) ([]C.Rule, map[strin
 		rules = append(rules, parsed)
 	}
 
-	return rules, ruleProvider, nil
+	return rules, ruleProviders, nil
 }
 
 func parseHosts(cfg *RawConfig) (*trie.DomainTrie, error) {

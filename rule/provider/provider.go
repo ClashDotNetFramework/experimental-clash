@@ -40,6 +40,7 @@ type RuleProvider interface {
 	RuleCount() int
 	Behavior() Behavior
 }
+
 type ruleSetProvider struct {
 	*fetcher
 	behavior       Behavior
@@ -65,6 +66,7 @@ func NewRuleSetProvider(name string, behavior Behavior, interval time.Duration, 
 	rp := &ruleSetProvider{
 		behavior: behavior,
 	}
+
 	onUpdate := func(elm interface{}) error {
 		rulesRaw := elm.([]string)
 		rp.count = len(rulesRaw)
@@ -81,9 +83,11 @@ func NewRuleSetProvider(name string, behavior Behavior, interval time.Duration, 
 	wrapper := &RuleSetProvider{
 		rp,
 	}
+
 	runtime.SetFinalizer(wrapper, stopRuleSetProvider)
 	return wrapper
 }
+
 func (rp *ruleSetProvider) Name() string {
 	return rp.name
 }
@@ -91,6 +95,7 @@ func (rp *ruleSetProvider) Name() string {
 func (rp *ruleSetProvider) RuleCount() int {
 	return rp.count
 }
+
 func (rp *ruleSetProvider) Search(metadata *C.Metadata) bool {
 	switch rp.behavior {
 	case Domain:
@@ -112,6 +117,7 @@ func (rp *ruleSetProvider) Search(metadata *C.Metadata) bool {
 func (rp *ruleSetProvider) Behavior() Behavior {
 	return rp.behavior
 }
+
 func (rp *ruleSetProvider) VehicleType() provider.VehicleType {
 	return rp.vehicle.Type()
 }
@@ -125,6 +131,7 @@ func (rp *ruleSetProvider) Initial() error {
 	if err != nil {
 		return err
 	}
+
 	return rp.fetcher.onUpdate(elm)
 }
 
@@ -133,8 +140,10 @@ func (rp *ruleSetProvider) Update() error {
 	if err == nil && !same {
 		return rp.fetcher.onUpdate(elm)
 	}
+
 	return err
 }
+
 func (rp *ruleSetProvider) setRules(rules interface{}) {
 	switch rp.behavior {
 	case Domain:
@@ -146,6 +155,7 @@ func (rp *ruleSetProvider) setRules(rules interface{}) {
 	default:
 	}
 }
+
 func (rp ruleSetProvider) MarshalJSON() ([]byte, error) {
 	return json.Marshal(
 		map[string]interface{}{
@@ -157,12 +167,14 @@ func (rp ruleSetProvider) MarshalJSON() ([]byte, error) {
 			"vehicleType": rp.VehicleType().String(),
 		})
 }
+
 func rulesParse(buf []byte) (interface{}, error) {
 	rulePayload := RulePayload{}
 	err := yaml.Unmarshal(buf, &rulePayload)
 	if err != nil {
 		return nil, err
 	}
+
 	return rulePayload.Rules, nil
 }
 
@@ -178,6 +190,7 @@ func constructRules(behavior Behavior, rules []string) (interface{}, error) {
 		return nil, errors.New("unknown behavior type")
 	}
 }
+
 func handleDomainRules(rules []string) (interface{}, error) {
 	domainRules := trie.New()
 	for _, rawRule := range rules {
@@ -185,12 +198,14 @@ func handleDomainRules(rules []string) (interface{}, error) {
 		if ruleType != "" {
 			return nil, errors.New("error format of domain")
 		}
+
 		if err := domainRules.Insert(rule, nil); err != nil {
 			return nil, err
 		}
 	}
 	return domainRules, nil
 }
+
 func handleIpCidrRules(rules []string) (interface{}, error) {
 	ipCidrRules := trie.NewIpCidrTrie()
 	for _, rawRule := range rules {
@@ -198,12 +213,14 @@ func handleIpCidrRules(rules []string) (interface{}, error) {
 		if ruleType != "" {
 			return nil, errors.New("error format of ip-cidr")
 		}
+
 		if err := ipCidrRules.AddIpCidr(rule); err != nil {
 			return nil, err
 		}
 	}
 	return ipCidrRules, nil
 }
+
 func handleClassicalRules(rules []string) (interface{}, error) {
 	var classicalRules []C.Rule
 	for _, rawRule := range rules {
@@ -211,16 +228,18 @@ func handleClassicalRules(rules []string) (interface{}, error) {
 		if ruleType == "RULE-SET" {
 			return nil, errors.New("error rule type")
 		}
+
 		r, err := R.ParseRule(ruleType, rule, "", params)
 		if err != nil {
 			return nil, err
 		}
+
 		classicalRules = append(classicalRules, r)
 	}
 	return classicalRules, nil
 }
-func ruleParse(ruleRaw string) (string, string, []string) {
 
+func ruleParse(ruleRaw string) (string, string, []string) {
 	item := strings.Split(ruleRaw, ",")
 	if len(item) == 1 {
 		return "", item[0], nil
@@ -229,6 +248,7 @@ func ruleParse(ruleRaw string) (string, string, []string) {
 	} else if len(item) > 2 {
 		return item[0], item[1], item[2:]
 	}
+
 	return "", "", nil
 }
 

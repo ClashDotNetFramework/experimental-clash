@@ -32,9 +32,11 @@ type fetcher struct {
 func (f *fetcher) Name() string {
 	return f.name
 }
+
 func (f *fetcher) VehicleType() provider.VehicleType {
 	return f.vehicle.Type()
 }
+
 func (f *fetcher) Initial() (interface{}, error) {
 	var (
 		buf      []byte
@@ -50,35 +52,44 @@ func (f *fetcher) Initial() (interface{}, error) {
 	} else {
 		buf, err = f.vehicle.Read()
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	rules, err := f.parser(buf)
 	if err != nil {
 		if !hasLocal {
 			return nil, err
 		}
+
 		buf, err = f.vehicle.Read()
 		if err != nil {
 			return nil, err
 		}
+
 		rules, err = f.parser(buf)
 		if err != nil {
 			return nil, err
 		}
+
 		hasLocal = false
 	}
+
 	if f.vehicle.Type() != provider.File && !hasLocal {
 		if err := safeWrite(f.vehicle.Path(), buf); err != nil {
 			return nil, err
 		}
 	}
+
 	f.hash = md5.Sum(buf)
 	if f.ticker != nil {
 		go f.pullLoop()
 	}
+
 	return rules, nil
 }
+
 func (f *fetcher) Update() (interface{}, bool, error) {
 	buf, err := f.vehicle.Read()
 	if err != nil {
@@ -108,12 +119,14 @@ func (f *fetcher) Update() (interface{}, bool, error) {
 
 	return rules, false, nil
 }
+
 func (f *fetcher) Destroy() error {
 	if f.ticker != nil {
 		f.done <- struct{}{}
 	}
 	return nil
 }
+
 func newFetcher(name string, interval time.Duration, vehicle provider.Vehicle, parser parser, onUpdate func(interface{}) error) *fetcher {
 	var ticker *time.Ticker
 	if interval != 0 {
@@ -141,6 +154,7 @@ func safeWrite(path string, buf []byte) error {
 
 	return ioutil.WriteFile(path, buf, fileMode)
 }
+
 func (f *fetcher) pullLoop() {
 	for {
 		select {
@@ -163,6 +177,7 @@ func (f *fetcher) pullLoop() {
 					log.Infoln("[Provider] %s update failed", f.Name())
 				}
 			}
+
 		case <-f.done:
 			f.ticker.Stop()
 			return
