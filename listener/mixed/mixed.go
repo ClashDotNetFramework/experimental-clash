@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Dreamacro/clash/common/cache"
+	N "github.com/Dreamacro/clash/common/net"
 	C "github.com/Dreamacro/clash/constant"
 	"github.com/Dreamacro/clash/listener/http"
 	"github.com/Dreamacro/clash/listener/socks"
@@ -12,10 +13,10 @@ import (
 )
 
 type Listener struct {
-	net.Listener
-	address string
-	closed  bool
-	cache   *cache.Cache
+	listener net.Listener
+	address  string
+	closed   bool
+	cache    *cache.Cache
 }
 
 func New(addr string, in chan<- C.ConnContext) (*Listener, error) {
@@ -27,7 +28,7 @@ func New(addr string, in chan<- C.ConnContext) (*Listener, error) {
 	ml := &Listener{l, addr, false, cache.New(30 * time.Second)}
 	go func() {
 		for {
-			c, err := ml.Accept()
+			c, err := ml.listener.Accept()
 			if err != nil {
 				if ml.closed {
 					break
@@ -43,7 +44,7 @@ func New(addr string, in chan<- C.ConnContext) (*Listener, error) {
 
 func (l *Listener) Close() {
 	l.closed = true
-	l.Listener.Close()
+	l.listener.Close()
 }
 
 func (l *Listener) Address() string {
@@ -51,7 +52,7 @@ func (l *Listener) Address() string {
 }
 
 func handleConn(conn net.Conn, in chan<- C.ConnContext, cache *cache.Cache) {
-	bufConn := NewBufferedConn(conn)
+	bufConn := N.NewBufferedConn(conn)
 	head, err := bufConn.Peek(1)
 	if err != nil {
 		return
