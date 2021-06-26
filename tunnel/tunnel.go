@@ -2,6 +2,7 @@ package tunnel
 
 import (
 	"fmt"
+	provider2 "github.com/Dreamacro/clash/rule/provider"
 	"net"
 	"runtime"
 	"sync"
@@ -18,13 +19,14 @@ import (
 )
 
 var (
-	tcpQueue  = make(chan C.ConnContext, 200)
-	udpQueue  = make(chan *inbound.PacketAdapter, 200)
-	natTable  = nat.New()
-	rules     []C.Rule
-	proxies   = make(map[string]C.Proxy)
-	providers map[string]provider.ProxyProvider
-	configMux sync.RWMutex
+	tcpQueue      = make(chan C.ConnContext, 200)
+	udpQueue      = make(chan *inbound.PacketAdapter, 200)
+	natTable      = nat.New()
+	rules         []C.Rule
+	proxies       = make(map[string]C.Proxy)
+	providers     map[string]provider.ProxyProvider
+	ruleProviders map[string]provider2.RuleProvider
+	configMux     sync.RWMutex
 
 	// Outbound Rule
 	mode = Rule
@@ -53,9 +55,10 @@ func Rules() []C.Rule {
 }
 
 // UpdateRules handle update rules
-func UpdateRules(newRules []C.Rule) {
+func UpdateRules(newRules []C.Rule, rp map[string]provider2.RuleProvider) {
 	configMux.Lock()
 	rules = newRules
+	ruleProviders = rp
 	configMux.Unlock()
 }
 
@@ -67,6 +70,11 @@ func Proxies() map[string]C.Proxy {
 // Providers return all compatible providers
 func Providers() map[string]provider.ProxyProvider {
 	return providers
+}
+
+// RuleProviders return all loaded rule providers
+func RuleProviders() map[string]provider2.RuleProvider {
+	return ruleProviders
 }
 
 // UpdateProxies handle update proxies
