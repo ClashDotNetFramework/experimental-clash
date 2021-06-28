@@ -48,6 +48,10 @@ func (trie *IpCidrTrie) AddIpCidrForString(ipCidr string) error {
 
 func (trie *IpCidrTrie) IsContain(ip net.IP) bool {
 	ip, isIpv4 := checkAndConverterIp(ip)
+	if ip == nil {
+		return false
+	}
+
 	var groupValues []uint32
 	var ipCidrNode *IpCidrNode
 
@@ -67,12 +71,7 @@ func (trie *IpCidrTrie) IsContain(ip net.IP) bool {
 }
 
 func (trie *IpCidrTrie) IsContainForString(ipString string) bool {
-	ip := net.ParseIP(ipString)
-	if ip == nil {
-		return false
-	}
-
-	return trie.IsContain(ip)
+	return trie.IsContain(net.ParseIP(ipString))
 }
 
 func ipCidrToSubIpCidr(ipNet *net.IPNet) ([]net.IP, int, bool, error) {
