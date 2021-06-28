@@ -101,7 +101,7 @@ func (rp *ruleSetProvider) Search(metadata *C.Metadata) bool {
 	case Domain:
 		return rp.DomainRules.Search(metadata.Host) != nil
 	case IPCIDR:
-		return rp.IPCIDRRules.IsContain(metadata.DstIP.String())
+		return rp.IPCIDRRules.IsContain(metadata.DstIP)
 	case Classical:
 		for _, rule := range rp.ClassicalRules {
 			if rule.Match(metadata) {
@@ -214,7 +214,7 @@ func handleIpCidrRules(rules []string) (interface{}, error) {
 			return nil, errors.New("error format of ip-cidr")
 		}
 
-		if err := ipCidrRules.AddIpCidr(rule); err != nil {
+		if err := ipCidrRules.AddIpCidrForString(rule); err != nil {
 			return nil, err
 		}
 	}
