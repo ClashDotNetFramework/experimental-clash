@@ -1,39 +1,47 @@
 package trie
 
-const ()
+import "errors"
+
+var (
+	ErrorOverMaxValue = errors.New("the value don't over max value")
+)
 
 type IpCidrNode struct {
-	Tag   bool
-	child [256]*IpCidrNode
+	Mark     bool
+	child    map[uint32]*IpCidrNode
+	maxValue uint32
 }
 
-func NewIpCidrNode(tag bool, initChild bool) *IpCidrNode {
+func NewIpCidrNode(mark bool, maxValue uint32) *IpCidrNode {
 	ipCidrNode := &IpCidrNode{
-		Tag:   tag,
-		child: [256]*IpCidrNode{},
-	}
-
-	if initChild {
-		for i := 0; i < 256; i++ {
-			ipCidrNode.child[i] = NewIpCidrNode(false, false)
-		}
+		Mark:     mark,
+		child:    map[uint32]*IpCidrNode{},
+		maxValue: maxValue,
 	}
 
 	return ipCidrNode
 }
 
-func (n *IpCidrNode) addChild(value uint8) {
-	n.child[value] = NewIpCidrNode(false, false)
-}
-
-func (n *IpCidrNode) hasChild(value uint8) bool {
-	return !n.Tag && n.child[value] != nil
-}
-
-func (n *IpCidrNode) getChild(value uint8) *IpCidrNode {
-	if !n.Tag {
-		return n.child[value]
+func (n *IpCidrNode) addChild(value uint32) error {
+	if value > n.maxValue {
+		return ErrorOverMaxValue
 	}
 
+	n.child[value] = NewIpCidrNode(false, n.maxValue)
+	return nil
+}
+
+func (n *IpCidrNode) hasChild(value uint32) bool {
+	return n.getChild(value) != nil
+}
+
+func (n *IpCidrNode) getChild(value uint32) *IpCidrNode {
+	if value <= n.maxValue && !n.Mark {
+		if n.child[value] == nil {
+			n.child[value] = NewIpCidrNode(false, n.maxValue)
+		}
+
+		return n.child[value]
+	}
 	return nil
 }

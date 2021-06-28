@@ -1,191 +1,215 @@
 package trie
 
 import (
-	"errors"
-	"strconv"
-	"strings"
+	"github.com/Dreamacro/clash/log"
+	"net"
 )
 
-var (
-	ErrInvalidIpFormat     = errors.New("invalid ip format")
-	ErrInvalidIpCidrFormat = errors.New("invalid ip cidr format")
-)
+type IPV6 bool
 
-const big = 0xFFFFFF
+const (
+	ipv4GroupMaxValue = 0xFF
+	ipv6GroupMaxValue = 0xFFFF
+)
 
 type IpCidrTrie struct {
-	root IpCidrNode
+	ipv4Trie *IpCidrNode
+	ipv6Trie *IpCidrNode
 }
 
 func NewIpCidrTrie() *IpCidrTrie {
 	return &IpCidrTrie{
-		root: *NewIpCidrNode(false, true),
+		ipv4Trie: NewIpCidrNode(false, ipv4GroupMaxValue),
+		ipv6Trie: NewIpCidrNode(false, ipv6GroupMaxValue),
 	}
 }
 
-func (trie *IpCidrTrie) AddIpCidr(ipCidr string) error {
-	subIpCidr, subCidr, err := splitSubIpCidr(ipCidr)
+func (trie *IpCidrTrie) AddIpCidr(ipCidr *net.IPNet) error {
+	subIpCidr, subCidr, isIpv4, err := ipCidrToSubIpCidr(ipCidr)
 	if err != nil {
 		return err
 	}
 
 	for _, sub := range subIpCidr {
-		addIpCidr(trie, sub, subCidr/8)
+		addIpCidr(trie, isIpv4, sub, subCidr/8)
 	}
 
 	return nil
 }
 
-func (trie *IpCidrTrie) IsContain(ip string) bool {
-	values := validAndObtainIp(ip)
-	if values == nil {
+func (trie *IpCidrTrie) AddIpCidrForString(ipCidr string) error {
+	_, ipNet, err := net.ParseCIDR(ipCidr)
+	if err != nil {
+		return err
+	}
+
+	return trie.AddIpCidr(ipNet)
+}
+
+func (trie *IpCidrTrie) IsContain(ip net.IP) bool {
+	ip, isIpv4 := checkAndConverterIp(ip)
+	var groupValues []uint32
+	var ipCidrNode *IpCidrNode
+
+	if isIpv4 {
+		ipCidrNode = trie.ipv4Trie
+		for _, group := range ip {
+			groupValues = append(groupValues, uint32(group))
+		}
+	} else {
+		ipCidrNode = trie.ipv6Trie
+		for i := 0; i < len(ip); i += 2 {
+			groupValues = append(groupValues, getIpv6GroupValue(ip[i], ip[i+1]))
+		}
+	}
+
+	return search(ipCidrNode, groupValues) != nil
+}
+
+func (trie *IpCidrTrie) IsContainForString(ipString string) bool {
+	ip := net.ParseIP(ipString)
+	if ip == nil {
 		return false
 	}
 
-	return search(&trie.root, values) != nil
+	return trie.IsContain(ip)
 }
 
-func validAndObtainIp(ip string) []uint8 {
-	p := make([]uint8, 4)
-	for i := 0; i < 4; i++ {
-		if len(ip) == 0 {
-			return nil
-		}
+func ipCidrToSubIpCidr(ipNet *net.IPNet) ([]net.IP, int, bool, error) {
+	maskSize, _ := ipNet.Mask.Size()
+	var (
+		ipList      []net.IP
+		newMaskSize int
+		isIpv4      bool
+		err         error
+	)
 
-		if i > 0 {
-			if ip[0] != '.' {
-				return nil
-			}
-			ip = ip[1:]
-		}
+	ip, isIpv4 := checkAndConverterIp(ipNet.IP)
+	ipList, newMaskSize, err = subIpCidr(ip, maskSize, true)
 
-		n, c, ok := dtoi(ip)
-		if !ok || n > 0xFF {
-			return nil
-		}
-
-		ip = ip[c:]
-		p[i] = uint8(n)
-	}
-
-	return p
+	return ipList, newMaskSize, isIpv4, err
 }
 
-func dtoi(s string) (n int, i int, ok bool) {
-	n = 0
-	for i = 0; i < len(s) && '0' <= s[i] && s[i] <= '9'; i++ {
-		n = n*10 + int(s[i]-'0')
-		if n >= big {
-			return big, i, false
-		}
+func subIpCidr(ip net.IP, maskSize int, isIpv4 bool) ([]net.IP, int, error) {
+	var subIpCidrList []net.IP
+	groupSize := 8
+	if !isIpv4 {
+		groupSize = 16
 	}
 
-	if i == 0 {
-		return 0, 0, false
+	if maskSize%groupSize == 0 {
+		return append(subIpCidrList, ip), maskSize, nil
 	}
 
-	return n, i, true
+	lastByteMaskSize := maskSize % 8
+	lastByteMaskIndex := maskSize / 8
+	subIpCidrNum := 0xFF >> lastByteMaskSize
+	for i := 0; i < subIpCidrNum; i++ {
+		subIpCidr := make([]byte, len(ip))
+		copy(subIpCidr, ip)
+		subIpCidr[lastByteMaskIndex] += byte(i)
+		subIpCidrList = append(subIpCidrList, subIpCidr)
+	}
+
+	return subIpCidrList, lastByteMaskIndex * 8, nil
 }
 
-/**
-Divide an ip cidr into multiple ip cidr whose subnet mask length is a multiple of 8
-*/
-func splitSubIpCidr(ipCidr string) ([][4]uint8, int, error) {
-	p := strings.Split(ipCidr, "/")
-	if len(p) != 2 {
-		return nil, 0, ErrInvalidIpCidrFormat
+func addIpCidr(trie *IpCidrTrie, isIpv4 bool, ip net.IP, groupSize int) {
+	if isIpv4 {
+		addIpv4Cidr(trie, ip, groupSize)
+	} else {
+		addIpv6Cidr(trie, ip, groupSize)
 	}
-
-	uint8Ip := validAndObtainIp(p[0])
-	if uint8Ip == nil {
-		return nil, 0, ErrInvalidIpFormat
-	}
-
-	cidr, err := strconv.Atoi(p[1])
-	if err != nil || (cidr < 0 || cidr > 32) {
-		return nil, 0, ErrInvalidIpCidrFormat
-	}
-
-	if cidr == 0 {
-		return make([][4]uint8, 1), 0, nil
-	}
-
-	cidrIndex := cidr / 8
-	subIpCidr := make([][4]uint8, 0)
-
-	lastIndexCidrNum := cidr % 8
-	if lastIndexCidrNum == 0 {
-		index := cidrIndex
-		if cidrIndex > 3 {
-			index = 3
-		}
-
-		ipCidr := [4]uint8{}
-		for i := 0; i <= index; i++ {
-			ipCidr[i] = uint8Ip[i]
-		}
-
-		subIpCidr = append(subIpCidr, ipCidr)
-		return subIpCidr, cidrIndex * 8, nil
-	}
-
-	subIpCidrNum := uint8Ip[cidrIndex] & (0xFF >> lastIndexCidrNum)
-	var endCidr uint8 = 0
-
-	endCidr = uint8Ip[cidrIndex] & uint8(0xFF<<(8-lastIndexCidrNum))
-	for i := 0; i < int(subIpCidrNum); i++ {
-		j := 0
-		sub := [4]uint8{}
-		for ; j < cidrIndex; j++ {
-			sub[j] = 0xff & uint8Ip[j]
-		}
-
-		sub[j] = endCidr + uint8(i)
-		subIpCidr = append(subIpCidr, sub)
-	}
-
-	return subIpCidr, (cidrIndex + 1) * 8, nil
 }
 
-func addIpCidr(trie *IpCidrTrie, ip [4]uint8, cidrByteSize int) {
-	node := trie.root.getChild(ip[0])
+func addIpv4Cidr(trie *IpCidrTrie, ip net.IP, groupSize int) {
+	node := trie.ipv4Trie.getChild(uint32(ip[0]))
 
-	for i := 1; i < cidrByteSize; i++ {
-		if node.Tag {
+	for i := 1; i < groupSize; i++ {
+		if node.Mark {
 			return
 		}
-		if !node.hasChild(ip[i]) {
-			node.addChild(ip[i])
+
+		groupValue := uint32(ip[i])
+		if !node.hasChild(groupValue) {
+			err := node.addChild(groupValue)
+			if err != nil {
+				log.Errorln(err.Error())
+			}
 		}
 
-		node = node.getChild(ip[i])
+		node = node.getChild(groupValue)
 	}
-	node.Tag = true
+
+	node.Mark = true
 	cleanChild(node)
 }
 
+func addIpv6Cidr(trie *IpCidrTrie, ip net.IP, groupSize int) {
+	node := trie.ipv6Trie.getChild(getIpv6GroupValue(ip[0], ip[1]))
+
+	for i := 2; i < groupSize; i += 2 {
+		if node.Mark {
+			return
+		}
+
+		groupValue := getIpv6GroupValue(ip[i], ip[i+1])
+		if !node.hasChild(groupValue) {
+			err := node.addChild(groupValue)
+			if err != nil {
+				log.Errorln(err.Error())
+			}
+		}
+
+		node = node.getChild(groupValue)
+	}
+
+	node.Mark = true
+	cleanChild(node)
+}
+
+func getIpv6GroupValue(high, low byte) uint32 {
+	return (uint32(high) << 8) | uint32(low)
+}
+
 func cleanChild(node *IpCidrNode) {
-	for i := 0; i < len(node.child); i++ {
-		node.child[i] = nil
+	for i := uint32(0); i < uint32(len(node.child)); i++ {
+		delete(node.child, i)
 	}
 }
 
-func search(root *IpCidrNode, partValues []uint8) *IpCidrNode {
-	node := root.getChild(partValues[0])
-	if node.Tag {
+func search(root *IpCidrNode, groupValues []uint32) *IpCidrNode {
+	node := root.getChild(groupValues[0])
+	if node.Mark {
 		return node
 	}
 
-	for _, value := range partValues[1:] {
+	for _, value := range groupValues[1:] {
 		if !node.hasChild(value) {
 			return nil
 		}
 
 		node = node.getChild(value)
 
-		if node.Tag {
+		if node.Mark {
 			return node
 		}
 	}
+
 	return nil
+}
+
+// return net.IP To4 or To16 and is ipv4
+func checkAndConverterIp(ip net.IP) (net.IP, bool) {
+	ipResult := ip.To4()
+	if ipResult == nil {
+		ipResult = ip.To16()
+		if ipResult == nil {
+			return nil, false
+		}
+
+		return ipResult, false
+	}
+
+	return ipResult, true
 }
