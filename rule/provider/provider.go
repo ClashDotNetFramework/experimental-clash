@@ -199,7 +199,7 @@ func handleDomainRules(rules []string) (interface{}, error) {
 			return nil, errors.New("error format of domain")
 		}
 
-		if err := domainRules.Insert(rule, nil); err != nil {
+		if err := domainRules.Insert(rule, ""); err != nil {
 			return nil, err
 		}
 	}
