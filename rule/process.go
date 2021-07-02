@@ -2,6 +2,7 @@ package rules
 
 import (
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 
