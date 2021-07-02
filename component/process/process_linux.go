@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net"
 	"path"
-	"path/filepath"
 	"syscall"
 	"unsafe"
 

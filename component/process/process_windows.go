@@ -3,7 +3,6 @@ package process
 import (
 	"fmt"
 	"net"
-	"path/filepath"
 	"sync"
 	"syscall"
 	"unsafe"

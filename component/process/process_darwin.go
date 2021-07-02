@@ -3,7 +3,6 @@ package process
 import (
 	"encoding/binary"
 	"net"
-	"path/filepath"
 	"syscall"
 	"unsafe"
 
