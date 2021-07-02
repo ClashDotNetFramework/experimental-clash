@@ -96,7 +96,7 @@ func getExecPathFromPID(pid uint32) (string, error) {
 		return "", errno
 	}
 
-	return filepath.Base(unix.ByteSliceToString(buf)), nil
+	return unix.ByteSliceToString(buf), nil
 }
 
 func readNativeUint32(b []byte) uint32 {

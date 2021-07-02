@@ -213,12 +213,12 @@ func getExecPathFromPID(pid uint32) (string, error) {
 	r1, _, err := syscall.Syscall6(
 		queryProcName, 4,
 		uintptr(h),
-		uintptr(1),
+		uintptr(0),
 		uintptr(unsafe.Pointer(&buf[0])),
 		uintptr(unsafe.Pointer(&size)),
 		0, 0)
 	if r1 == 0 {
 		return "", err
 	}
-	return filepath.Base(syscall.UTF16ToString(buf[:size])), nil
+	return syscall.UTF16ToString(buf[:size]), nil
 }

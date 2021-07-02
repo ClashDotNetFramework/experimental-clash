@@ -16,6 +16,7 @@ var processCache = cache.NewLRUCache(cache.WithAge(2), cache.WithSize(64))
 type Process struct {
 	adapter string
 	process string
+	fullMatch bool
 }
 
 func (ps *Process) RuleType() C.RuleType {
@@ -42,7 +43,12 @@ func (ps *Process) Match(metadata *C.Metadata) bool {
 		cached = name
 	}
 
-	return strings.EqualFold(cached.(string), ps.process)
+	processName := cached.(string)
+	if !ps.fullMatch {
+		processName = filepath.Base(processName)
+	}
+
+	return strings.EqualFold(processName, ps.process)
 }
 
 func (ps *Process) Adapter() string {
@@ -57,9 +63,14 @@ func (ps *Process) ShouldResolveIP() bool {
 	return false
 }
 
-func NewProcess(process string, adapter string) (*Process, error) {
+func NewProcess(process string, adapter string, fullMatch bool) (*Process, error) {
+	if !fullMatch {
+		process = filepath.Base(process)
+	}
+
 	return &Process{
 		adapter: adapter,
 		process: process,
+		fullMatch: fullMatch,
 	}, nil
 }

@@ -224,7 +224,7 @@ func splitCmdline(cmdline []byte) string {
 		}
 	}
 
-	return filepath.Base(string(cmdline[:indexOfEndOfString]))
+	return string(cmdline[:indexOfEndOfString])
 }
 
 func isPid(s string) bool {
