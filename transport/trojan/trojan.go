@@ -48,8 +48,6 @@ type Option struct {
 	ALPN                []string
 	ServerName          string
 	SkipCertVerify      bool
-	ClientSessionCache  tls.ClientSessionCache
-	ClientXSessionCache xtls.ClientSessionCache
 }
 
 type Trojan struct {
@@ -74,7 +72,6 @@ func (t *Trojan) StreamConn(conn net.Conn) (net.Conn, error) {
 			MinVersion:         xtls.VersionTLS12,
 			InsecureSkipVerify: t.option.SkipCertVerify,
 			ServerName:         t.option.ServerName,
-			ClientSessionCache: t.option.ClientXSessionCache,
 		}
 		xtlsConn := xtls.Client(conn, xtlsConfig)
 		if err := xtlsConn.Handshake(); err != nil {
@@ -88,7 +85,6 @@ func (t *Trojan) StreamConn(conn net.Conn) (net.Conn, error) {
 			MinVersion:         tls.VersionTLS12,
 			InsecureSkipVerify: t.option.SkipCertVerify,
 			ServerName:         t.option.ServerName,
-			ClientSessionCache: t.option.ClientSessionCache,
 		}
 		tlsConn := tls.Client(conn, tlsConfig)
 		if err := tlsConn.Handshake(); err != nil {

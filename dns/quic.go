@@ -115,7 +115,6 @@ func (dc *quicClient) getSession() (quic.Session, error) {
 
 func (dc *quicClient) openSession() (quic.Session, error) {
 	tlsConfig := &tls.Config{
-		ClientSessionCache: globalSessionCache,
 		InsecureSkipVerify: true,
 		NextProtos: []string{
 			"http/1.1", "h2", NextProtoDQ,
