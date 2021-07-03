@@ -1,16 +1,29 @@
-package provider
+package provider_test
 
 import (
 	"github.com/Dreamacro/clash/adapter/provider"
 	"github.com/Dreamacro/clash/constant"
+	"github.com/Dreamacro/clash/rule"
+	ruleProvider "github.com/Dreamacro/clash/rule/provider"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"
 	"time"
 )
 
+func setup() {
+	ruleProvider.SetClassicalRuleParser(func(ruleType, rule string, params []string) (constant.Rule, error) {
+		if params == nil {
+			params = make([]string, 0)
+		}
+
+		return rules.ParseRule(ruleType, rule, "", params)
+	})
+}
+
 func TestDomain(t *testing.T) {
-	domainProvider := NewRuleSetProvider("test", Domain,
+	setup()
+	domainProvider := ruleProvider.NewRuleSetProvider("test", ruleProvider.Domain,
 		time.Duration(uint(100000)), provider.NewFileVehicle("./domain.txt"))
 	assert.Nil(t, domainProvider.Initial())
 	assert.True(t, domainProvider.Search(&constant.Metadata{Host: "youtube.com"}))
@@ -21,7 +34,8 @@ func TestDomain(t *testing.T) {
 }
 
 func TestClassical(t *testing.T) {
-	classicalProvider := NewRuleSetProvider("test", Classical,
+	setup()
+	classicalProvider := ruleProvider.NewRuleSetProvider("test", ruleProvider.Classical,
 		time.Duration(uint(100000)), provider.NewFileVehicle("./classical.txt"))
 	assert.Nil(t, classicalProvider.Initial())
 	assert.True(t, classicalProvider.Search(&constant.Metadata{Host: "www.10010.com", AddrType: constant.AtypDomainName}))
@@ -34,7 +48,8 @@ func TestClassical(t *testing.T) {
 }
 
 func TestIpCidr(t *testing.T) {
-	domainProvider := NewRuleSetProvider("test", IPCIDR,
+	setup()
+	domainProvider := ruleProvider.NewRuleSetProvider("test", ruleProvider.IPCIDR,
 		time.Duration(uint(100000)), provider.NewFileVehicle("./ipcidr.txt"))
 	assert.Nil(t, domainProvider.Initial())
 	assert.True(t, domainProvider.Search(&constant.Metadata{DstIP: net.ParseIP("91.108.22.10")}))

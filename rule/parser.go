@@ -34,6 +34,8 @@ func ParseRule(tp, payload, target string, params []string) (C.Rule, error) {
 	case "PROCESS-NAME":
 		fullMatch := HasFullMatch(params)
 		parsed, parseErr = NewProcess(payload, target, fullMatch)
+	case "RULE-SET":
+		parsed, parseErr = NewRuleSet(payload, target)
 	case "MATCH":
 		parsed = NewMatch(target)
 	default:

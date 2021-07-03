@@ -161,7 +161,7 @@ func updateProxies(proxies map[string]C.Proxy, providers map[string]provider.Pro
 	tunnel.UpdateProxies(proxies, providers)
 }
 
-func updateRules(rules []C.Rule, ruleProviders map[string]ruleProvider.RuleProvider) {
+func updateRules(rules []C.Rule, ruleProviders map[string]*ruleProvider.RuleProvider) {
 	tunnel.UpdateRules(rules, ruleProviders)
 }
 

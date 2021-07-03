@@ -25,7 +25,7 @@ var (
 	rules         []C.Rule
 	proxies       = make(map[string]C.Proxy)
 	providers     map[string]provider.ProxyProvider
-	ruleProviders map[string]ruleProvider.RuleProvider
+	ruleProviders map[string]*ruleProvider.RuleProvider
 	configMux     sync.RWMutex
 
 	// Outbound Rule
@@ -55,7 +55,7 @@ func Rules() []C.Rule {
 }
 
 // UpdateRules handle update rules
-func UpdateRules(newRules []C.Rule, rp map[string]ruleProvider.RuleProvider) {
+func UpdateRules(newRules []C.Rule, rp map[string]*ruleProvider.RuleProvider) {
 	configMux.Lock()
 	rules = newRules
 	ruleProviders = rp
@@ -73,7 +73,7 @@ func Providers() map[string]provider.ProxyProvider {
 }
 
 // RuleProviders return all loaded rule providers
-func RuleProviders() map[string]ruleProvider.RuleProvider {
+func RuleProviders() map[string]*ruleProvider.RuleProvider {
 	return ruleProviders
 }
 

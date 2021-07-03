@@ -95,8 +95,8 @@ func getRuleProviders(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateRuleProvider(w http.ResponseWriter, r *http.Request) {
-	provider := r.Context().Value(CtxKeyProvider).(ruleProvider.RuleProvider)
-	if err := provider.Update(); err != nil {
+	provider := r.Context().Value(CtxKeyProvider).(*ruleProvider.RuleProvider)
+	if err := (*provider).Update(); err != nil {
 		render.Status(r, http.StatusServiceUnavailable)
 		render.JSON(w, r, newError(err.Error()))
 	}
