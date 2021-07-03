@@ -6,7 +6,6 @@ import (
 	"github.com/Dreamacro/clash/adapter/provider"
 	"github.com/Dreamacro/clash/component/trie"
 	C "github.com/Dreamacro/clash/constant"
-	R "github.com/Dreamacro/clash/rule"
 	"gopkg.in/yaml.v2"
 	"runtime"
 	"strings"
@@ -14,6 +13,28 @@ import (
 )
 
 type Behavior int
+
+var (
+	parse = func(ruleType, rule string, params []string) (C.Rule, error) {
+		return nil, errors.New("unimplemented function")
+	}
+
+	ruleProviders = map[string]*RuleProvider{}
+)
+
+func SetClassicalRuleParser(function func(ruleType, rule string, params []string) (C.Rule, error)) {
+	parse = function
+}
+
+func RuleProviders() map[string]*RuleProvider {
+	return ruleProviders
+}
+
+func SetRuleProvider(ruleProvider *RuleProvider) {
+	if ruleProvider != nil {
+		ruleProviders[(*ruleProvider).Name()] = ruleProvider
+	}
+}
 
 const (
 	Domain Behavior = iota
@@ -229,7 +250,7 @@ func handleClassicalRules(rules []string) (interface{}, error) {
 			return nil, errors.New("error rule type")
 		}
 
-		r, err := R.ParseRule(ruleType, rule, "", params)
+		r, err := parse(ruleType, rule, params)
 		if err != nil {
 			return nil, err
 		}

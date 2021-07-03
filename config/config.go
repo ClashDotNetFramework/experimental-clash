@@ -95,7 +95,7 @@ type Config struct {
 	Users         []auth.AuthUser
 	Proxies       map[string]C.Proxy
 	Providers     map[string]provider.ProxyProvider
-	RuleProviders map[string]ruleProvider.RuleProvider
+	RuleProviders map[string]*ruleProvider.RuleProvider
 }
 
 type RawDNS struct {
@@ -378,23 +378,39 @@ func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providersMap map[
 	return proxies, providersMap, nil
 }
 
-func parseRules(cfg *RawConfig, proxies map[string]C.Proxy) ([]C.Rule, map[string]ruleProvider.RuleProvider, error) {
-	ruleProviders := map[string]ruleProvider.RuleProvider{}
+func parseRules(cfg *RawConfig, proxies map[string]C.Proxy) ([]C.Rule, map[string]*ruleProvider.RuleProvider, error) {
+	ruleProviders := map[string]*ruleProvider.RuleProvider{}
+	ruleProviderNameSet := make(map[string]interface{}, len(ruleProviders))
 
+	// set parse callback for parse rule type
+	ruleProvider.SetClassicalRuleParser(func(ruleType, rule string, params []string) (C.Rule, error) {
+		if params == nil {
+			params = make([]string, 0)
+		}
+
+		return R.ParseRule(ruleType, rule, "", params)
+	})
+
+	// parse rule provider
 	for name, mapping := range cfg.RuleProvider {
 		rp, err := ruleProvider.ParseRuleProvider(name, mapping)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		ruleProviders[name] = rp
+		ruleProviders[name] = &rp
+		ruleProvider.SetRuleProvider(&rp)
 	}
 
 	for _, provider := range ruleProviders {
-		log.Infoln("Start initial provider %s", provider.Name())
-		if err := provider.Initial(); err != nil {
-			return nil, nil, fmt.Errorf("initial rule provider %s error: %w", provider.Name(), err)
+		log.Infoln("Start initial provider %s", (*provider).Name())
+		if err := (*provider).Initial(); err != nil {
+			return nil, nil, fmt.Errorf("initial rule provider %s error: %w", (*provider).Name(), err)
 		}
+	}
+	// get all name of rule provider
+	for k := range ruleProviders {
+		ruleProviderNameSet[k] = nil
 	}
 
 	rules := []C.Rule{}
@@ -434,15 +450,7 @@ func parseRules(cfg *RawConfig, proxies map[string]C.Proxy) ([]C.Rule, map[strin
 			parseErr error
 		)
 
-		if rule[0] == "RULE-SET" {
-			rp, ok := ruleProviders[payload]
-			if !ok {
-				return nil, nil, fmt.Errorf("rules[%d] [%s] error: RULE-SET [%s] not found", idx, line, rule[1])
-			}
-			parsed = ruleProvider.NewRuleSet(rp, target)
-		} else {
-			parsed, parseErr = R.ParseRule(rule[0], payload, target, params)
-		}
+		parsed, parseErr = R.ParseRule(rule[0], payload, target, params)
 
 		if parseErr != nil {
 			return nil, nil, fmt.Errorf("rules[%d] [%s] error: %s", idx, line, parseErr.Error())
