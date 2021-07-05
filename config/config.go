@@ -362,6 +362,9 @@ func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providersMap map[
 
 	ps := []C.Proxy{}
 	for _, v := range proxyList {
+		if proxies[v].Type() == C.Pass {
+			continue
+		}
 		ps = append(ps, proxies[v])
 	}
 	hc := provider.NewHealthCheck(ps, "", 0, true)
