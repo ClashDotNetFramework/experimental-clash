@@ -84,7 +84,7 @@ func ipCidrToSubIpCidr(ipNet *net.IPNet) ([]net.IP, int, bool, error) {
 	)
 
 	ip, isIpv4 := checkAndConverterIp(ipNet.IP)
-	ipList, newMaskSize, err = subIpCidr(ip, maskSize, true)
+	ipList, newMaskSize, err = subIpCidr(ip, maskSize, isIpv4)
 
 	return ipList, newMaskSize, isIpv4, err
 }
@@ -110,7 +110,12 @@ func subIpCidr(ip net.IP, maskSize int, isIpv4 bool) ([]net.IP, int, error) {
 		subIpCidrList = append(subIpCidrList, subIpCidr)
 	}
 
-	return subIpCidrList, lastByteMaskIndex * 8, nil
+	newMaskSize := (lastByteMaskIndex + 1) * 8
+	if !isIpv4 {
+		newMaskSize = (lastByteMaskIndex/2 + 1) * 16
+	}
+
+	return subIpCidrList, newMaskSize, nil
 }
 
 func addIpCidr(trie *IpCidrTrie, isIpv4 bool, ip net.IP, groupSize int) {
