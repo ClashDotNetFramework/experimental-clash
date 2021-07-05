@@ -36,12 +36,9 @@ func (n *IpCidrNode) hasChild(value uint32) bool {
 }
 
 func (n *IpCidrNode) getChild(value uint32) *IpCidrNode {
-	if value <= n.maxValue && !n.Mark {
-		if n.child[value] == nil {
-			n.child[value] = NewIpCidrNode(false, n.maxValue)
-		}
-
+	if value <= n.maxValue {
 		return n.child[value]
 	}
+
 	return nil
 }

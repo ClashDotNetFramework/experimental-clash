@@ -49,11 +49,11 @@ func TestClassical(t *testing.T) {
 
 func TestIpCidr(t *testing.T) {
 	setup()
-	domainProvider := ruleProvider.NewRuleSetProvider("test", ruleProvider.IPCIDR,
+	ipCidrProvider := ruleProvider.NewRuleSetProvider("test", ruleProvider.IPCIDR,
 		time.Duration(uint(100000)), provider.NewFileVehicle("./ipcidr.txt"))
-	assert.Nil(t, domainProvider.Initial())
-	assert.True(t, domainProvider.Search(&constant.Metadata{DstIP: net.ParseIP("91.108.22.10")}))
-	assert.False(t, domainProvider.Search(&constant.Metadata{DstIP: net.ParseIP("149.190.220.251")}))
-	assert.True(t, domainProvider.Search(&constant.Metadata{DstIP: net.ParseIP("2001:b28:f23f:f005::a")}))
-	assert.False(t, domainProvider.Search(&constant.Metadata{DstIP: net.ParseIP("2006:b28:f23f:f005::a")}))
+	assert.Nil(t, ipCidrProvider.Initial())
+	assert.True(t, ipCidrProvider.Search(&constant.Metadata{DstIP: net.ParseIP("91.108.22.10")}))
+	assert.False(t, ipCidrProvider.Search(&constant.Metadata{DstIP: net.ParseIP("149.190.220.251")}))
+	assert.True(t, ipCidrProvider.Search(&constant.Metadata{DstIP: net.ParseIP("2001:b28:f23f:f005::a")}))
+	assert.False(t, ipCidrProvider.Search(&constant.Metadata{DstIP: net.ParseIP("2006:b28:f23f:f005::a")}))
 }
