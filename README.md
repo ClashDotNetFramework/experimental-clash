@@ -1,9 +1,9 @@
 <h1 align="center">
-  <img src="https://github.com/Dreamacro/clash/raw/master/docs/logo.png" alt="Clash" width="200">
-  <br>Clash<br>
+  <img src="https://i.loli.net/2021/05/03/TP8A1BnZjUfQmqE.png" alt="Clash" width="200">
+  <br>Experimental-Clash<br>
 </h1>
 
-<h4 align="center">A rule-based tunnel in Go.</h4>
+<h4 align="center">A rule-based tunnel in Go with experimental features.</h4>
 
 <p align="center">
   <a href="https://github.com/Dreamacro/clash/actions">
@@ -12,8 +12,8 @@
   <a href="https://goreportcard.com/report/github.com/Dreamacro/clash">
     <img src="https://goreportcard.com/badge/github.com/Dreamacro/clash?style=flat-square">
   </a>
-  <a href="https://github.com/Dreamacro/clash/releases">
-    <img src="https://img.shields.io/github/release/Dreamacro/clash/all.svg?style=flat-square">
+  <a href="https://github.com/ClashDotNetFramework/experimental-clash/releases">
+    <img src="https://img.shields.io/github/release/ClashDotNetFramework/experimental-clash/all.svg?style=flat-square">
   </a>
 </p>
 
@@ -27,18 +27,10 @@
 - Remote providers, allowing users to get node lists remotely instead of hardcoding in config
 - Netfilter TCP redirecting. Deploy Clash on your Internet gateway with `iptables`.
 - Comprehensive HTTP RESTful API controller
-
-## Premium Features
-
-- TUN mode on macOS, Linux and Windows. [Doc](https://github.com/Dreamacro/clash/wiki/premium-core-features#tun-device)
-- Match your tunnel by [Script](https://github.com/Dreamacro/clash/wiki/premium-core-features#script)
 - [Rule Provider](https://github.com/Dreamacro/clash/wiki/premium-core-features#rule-providers)
 
 ## Getting Started
 Documentations are now moved to [GitHub Wiki](https://github.com/Dreamacro/clash/wiki).
-
-## Premium Release
-[Release](https://github.com/Dreamacro/clash/releases/tag/premium)
 
 ## Development
 If you want to build an application that uses clash as a library, check out the the [GitHub Wiki](https://github.com/Dreamacro/clash/wiki/use-clash-as-a-library)
