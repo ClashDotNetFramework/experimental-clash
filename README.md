@@ -1,16 +1,16 @@
 <h1 align="center">
-  <img src="https://i.loli.net/2021/05/03/TP8A1BnZjUfQmqE.png" alt="Clash" width="200">
+  <img src="https://i.loli.net/2021/05/03/TP8A1BnZjUfQmqE.png" alt="Experimental-Clash" width="200">
   <br>Experimental-Clash<br>
 </h1>
 
 <h4 align="center">A rule-based tunnel in Go with experimental features.</h4>
 
 <p align="center">
-  <a href="https://github.com/Dreamacro/clash/actions">
-    <img src="https://img.shields.io/github/workflow/status/Dreamacro/clash/Go?style=flat-square" alt="Github Actions">
+  <a href="https://github.com/ClashDotNetFramework/experimental-clash/actions">
+    <img src="https://img.shields.io/github/workflow/status/ClashDotNetFramework/experimental-clash/Go?style=flat-square" alt="Github Actions">
   </a>
-  <a href="https://goreportcard.com/report/github.com/Dreamacro/clash">
-    <img src="https://goreportcard.com/badge/github.com/Dreamacro/clash?style=flat-square">
+  <a href="https://goreportcard.com/report/github.com/ClashDotNetFramework/experimental-clash">
+    <img src="https://goreportcard.com/badge/github.com/ClashDotNetFramework/experimental-clash?style=flat-square">
   </a>
   <a href="https://github.com/ClashDotNetFramework/experimental-clash/releases">
     <img src="https://img.shields.io/github/release/ClashDotNetFramework/experimental-clash/all.svg?style=flat-square">
