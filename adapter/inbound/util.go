@@ -7,10 +7,25 @@ import (
 	"strings"
 
 	C "github.com/Dreamacro/clash/constant"
+	"github.com/Dreamacro/clash/transport/socks4"
 	"github.com/Dreamacro/clash/transport/socks5"
 )
 
-func parseSocksAddr(target socks5.Addr) *C.Metadata {
+func parseSocks4Addr(addr *socks4.Addr) *C.Metadata {
+	aType := C.AtypIPv4
+	if addr.IsSocks4A() {
+		aType = C.AtypDomainName
+	}
+
+	return &C.Metadata{
+		AddrType: aType,
+		Host:     addr.Host,
+		DstIP:    addr.IP,
+		DstPort:  strconv.Itoa(int(addr.Port)),
+	}
+}
+
+func parseSocks5Addr(target socks5.Addr) *C.Metadata {
 	metadata := &C.Metadata{
 		AddrType: int(target[0]),
 	}

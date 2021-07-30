@@ -18,7 +18,7 @@ func (s *PacketAdapter) Metadata() *C.Metadata {
 
 // NewPacket is PacketAdapter generator
 func NewPacket(target socks5.Addr, packet C.UDPPacket, source C.Type) *PacketAdapter {
-	metadata := parseSocksAddr(target)
+	metadata := parseSocks5Addr(target)
 	metadata.NetWork = C.UDP
 	metadata.Type = source
 	if ip, port, err := parseAddr(packet.LocalAddr().String()); err == nil {

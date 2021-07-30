@@ -40,7 +40,31 @@ var (
 	ErrRequestUnknownCode      = errors.New("request failed with unknown code")
 )
 
-func ServerHandshake(rw io.ReadWriter, authenticator auth.Authenticator) (addr string, command Command, err error) {
+var _ net.Addr = (*Addr)(nil)
+
+// Addr implements net.Addr interface
+type Addr struct {
+	IP   net.IP
+	Host string
+	Port uint16
+}
+
+func (a *Addr) IsSocks4A() bool {
+	return a.Host != ""
+}
+
+func (a *Addr) Network() string {
+	return "tcp"
+}
+
+func (a *Addr) String() string {
+	if a.IsSocks4A() {
+		return net.JoinHostPort(a.Host, strconv.Itoa(int(a.Port)))
+	}
+	return net.JoinHostPort(a.IP.String(), strconv.Itoa(int(a.Port)))
+}
+
+func ServerHandshake(rw io.ReadWriter, authenticator auth.Authenticator) (addr *Addr, command Command, err error) {
 	var req [8]byte
 	if _, err = io.ReadFull(rw, req[:]); err != nil {
 		return
@@ -63,7 +87,7 @@ func ServerHandshake(rw io.ReadWriter, authenticator auth.Authenticator) (addr s
 
 	var (
 		host   string
-		port   string
+		port   uint16
 		code   uint8
 		userID []byte
 	)
@@ -79,11 +103,11 @@ func ServerHandshake(rw io.ReadWriter, authenticator auth.Authenticator) (addr s
 		host = string(target)
 	}
 
-	port = strconv.Itoa(int(binary.BigEndian.Uint16(dstPort)))
+	port = binary.BigEndian.Uint16(dstPort)
 	if host != "" {
-		addr = net.JoinHostPort(host, port)
+		addr = &Addr{Host: host, Port: port}
 	} else {
-		addr = net.JoinHostPort(net.IP(dstIP).String(), port)
+		addr = &Addr{IP: dstIP, Port: port}
 	}
 
 	// SOCKS4 only support USERID auth.
