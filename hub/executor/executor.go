@@ -2,7 +2,6 @@ package executor
 
 import (
 	"fmt"
-	ruleProvider "github.com/Dreamacro/clash/rule/provider"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -22,6 +21,7 @@ import (
 	P "github.com/Dreamacro/clash/listener"
 	authStore "github.com/Dreamacro/clash/listener/auth"
 	"github.com/Dreamacro/clash/log"
+	ruleProvider "github.com/Dreamacro/clash/rule/provider"
 	"github.com/Dreamacro/clash/tunnel"
 )
 
@@ -124,9 +124,10 @@ func updateDNS(c *config.DNS) {
 		Pool:         c.FakeIPRange,
 		Hosts:        c.Hosts,
 		FallbackFilter: dns.FallbackFilter{
-			GeoIP:  c.FallbackFilter.GeoIP,
-			IPCIDR: c.FallbackFilter.IPCIDR,
-			Domain: c.FallbackFilter.Domain,
+			GeoIP:     c.FallbackFilter.GeoIP,
+			GeoIPCode: c.FallbackFilter.GeoIPCode,
+			IPCIDR:    c.FallbackFilter.IPCIDR,
+			Domain:    c.FallbackFilter.Domain,
 		},
 		Default: c.DefaultNameserver,
 		Policy:  c.NameServerPolicy,
