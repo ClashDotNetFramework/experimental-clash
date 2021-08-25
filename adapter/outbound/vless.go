@@ -9,15 +9,14 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/url"
 	"strconv"
 	"sync"
 
 	"github.com/Dreamacro/clash/component/dialer"
 	"github.com/Dreamacro/clash/component/resolver"
+	C "github.com/Dreamacro/clash/constant"
 	"github.com/Dreamacro/clash/transport/vless"
 	"github.com/Dreamacro/clash/transport/vmess"
-	C "github.com/Dreamacro/clash/constant"
 	xtls "github.com/xtls/go"
 )
 
@@ -42,6 +41,7 @@ type VlessOption struct {
 	UDP            bool              `proxy:"udp,omitempty"`
 	TLS            bool              `proxy:"tls,omitempty"`
 	Network        string            `proxy:"network,omitempty"`
+	WSOpts         WSOptions         `proxy:"ws-opts,omitempty"`
 	WSPath         string            `proxy:"ws-path,omitempty"`
 	WSHeaders      map[string]string `proxy:"ws-headers,omitempty"`
 	SkipCertVerify bool              `proxy:"skip-cert-verify,omitempty"`
@@ -53,26 +53,23 @@ func (v *Vless) StreamConn(c net.Conn, metadata *C.Metadata) (net.Conn, error) {
 	var err error
 	switch v.option.Network {
 	case "ws":
+		if v.option.WSOpts.Path == "" {
+			v.option.WSOpts.Path = v.option.WSPath
+		}
+		if len(v.option.WSOpts.Headers) == 0 {
+			v.option.WSOpts.Headers = v.option.WSHeaders
+		}
+
 		host, port, _ := net.SplitHostPort(v.addr)
 		wsOpts := &vmess.WebsocketConfig{
-			Host: host,
-			Port: port,
-			Path: v.option.WSPath,
+			Host:                host,
+			Port:                port,
+			Path:                v.option.WSOpts.Path,
+			MaxEarlyData:        v.option.WSOpts.MaxEarlyData,
+			EarlyDataHeaderName: v.option.WSOpts.EarlyDataHeaderName,
 		}
 
-		var ed uint32
-		if u, err := url.Parse(v.option.WSPath); err == nil {
-			if q := u.Query(); q.Get("ed") != "" {
-				Ed, _ := strconv.Atoi(q.Get("ed"))
-				ed = uint32(Ed)
-				q.Del("ed")
-				u.RawQuery = q.Encode()
-				wsOpts.Path = u.String()
-			}
-		}
-		wsOpts.Ed = ed
-
-		if len(v.option.WSHeaders) != 0 {
+		if len(v.option.WSOpts.Headers) != 0 {
 			header := http.Header{}
 			for key, value := range v.option.WSHeaders {
 				header.Add(key, value)
@@ -85,11 +82,7 @@ func (v *Vless) StreamConn(c net.Conn, metadata *C.Metadata) (net.Conn, error) {
 			wsOpts.SkipCertVerify = v.option.SkipCertVerify
 			wsOpts.ServerName = v.option.ServerName
 		}
-		if wsOpts.Ed > 0 {
-			c, err = vmess.StreamWebsocketEDConn(c, wsOpts)
-		} else {
-			c, err = vmess.StreamWebsocketConn(c, wsOpts, nil)
-		}
+		c, err = vmess.StreamWebsocketConn(c, wsOpts)
 	default:
 		// handle TLS
 		if v.option.TLS {

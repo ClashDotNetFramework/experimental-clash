@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -44,6 +43,7 @@ type VmessOption struct {
 	HTTPOpts       HTTPOptions       `proxy:"http-opts,omitempty"`
 	HTTP2Opts      HTTP2Options      `proxy:"h2-opts,omitempty"`
 	GrpcOpts       GrpcOptions       `proxy:"grpc-opts,omitempty"`
+	WSOpts         WSOptions         `proxy:"ws-opts,omitempty"`
 	WSPath         string            `proxy:"ws-path,omitempty"`
 	WSHeaders      map[string]string `proxy:"ws-headers,omitempty"`
 	SkipCertVerify bool              `proxy:"skip-cert-verify,omitempty"`
@@ -65,31 +65,35 @@ type GrpcOptions struct {
 	GrpcServiceName string `proxy:"grpc-service-name,omitempty"`
 }
 
+type WSOptions struct {
+	Path                string            `proxy:"path,omitempty"`
+	Headers             map[string]string `proxy:"headers,omitempty"`
+	MaxEarlyData        int               `proxy:"max-early-data,omitempty"`
+	EarlyDataHeaderName string            `proxy:"early-data-header-name,omitempty"`
+}
+
 // StreamConn implements C.ProxyAdapter
 func (v *Vmess) StreamConn(c net.Conn, metadata *C.Metadata) (net.Conn, error) {
 	var err error
 	switch v.option.Network {
 	case "ws":
+		if v.option.WSOpts.Path == "" {
+			v.option.WSOpts.Path = v.option.WSPath
+		}
+		if len(v.option.WSOpts.Headers) == 0 {
+			v.option.WSOpts.Headers = v.option.WSHeaders
+		}
+
 		host, port, _ := net.SplitHostPort(v.addr)
 		wsOpts := &vmess.WebsocketConfig{
-			Host: host,
-			Port: port,
-			Path: v.option.WSPath,
+			Host:                host,
+			Port:                port,
+			Path:                v.option.WSOpts.Path,
+			MaxEarlyData:        v.option.WSOpts.MaxEarlyData,
+			EarlyDataHeaderName: v.option.WSOpts.EarlyDataHeaderName,
 		}
 
-		var ed uint32
-		if u, err := url.Parse(v.option.WSPath); err == nil {
-			if q := u.Query(); q.Get("ed") != "" {
-				Ed, _ := strconv.Atoi(q.Get("ed"))
-				ed = uint32(Ed)
-				q.Del("ed")
-				u.RawQuery = q.Encode()
-				wsOpts.Path = u.String()
-			}
-		}
-		wsOpts.Ed = ed
-
-		if len(v.option.WSHeaders) != 0 {
+		if len(v.option.WSOpts.Headers) != 0 {
 			header := http.Header{}
 			for key, value := range v.option.WSHeaders {
 				header.Add(key, value)
@@ -102,11 +106,7 @@ func (v *Vmess) StreamConn(c net.Conn, metadata *C.Metadata) (net.Conn, error) {
 			wsOpts.SkipCertVerify = v.option.SkipCertVerify
 			wsOpts.ServerName = v.option.ServerName
 		}
-		if wsOpts.Ed > 0 {
-			c, err = vmess.StreamWebsocketEDConn(c, wsOpts)
-		} else {
-			c, err = vmess.StreamWebsocketConn(c, wsOpts, nil)
-		}
+		c, err = vmess.StreamWebsocketConn(c, wsOpts)
 	case "http":
 		// readability first, so just copy default TLS logic
 		if v.option.TLS {
