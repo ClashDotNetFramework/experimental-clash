@@ -122,8 +122,8 @@ func (dc *quicClient) openSession() (quic.Session, error) {
 		SessionTicketsDisabled: false,
 	}
 	quicConfig := &quic.Config{
-		ConnectionIDLength: 12,
-		HandshakeTimeout:   time.Second * 8,
+		ConnectionIDLength:   12,
+		HandshakeIdleTimeout: time.Second * 8,
 	}
 
 	log.Debugln("opening session to %s", dc.addr)
