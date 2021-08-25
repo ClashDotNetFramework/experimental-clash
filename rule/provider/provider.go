@@ -3,9 +3,9 @@ package provider
 import (
 	"encoding/json"
 	"errors"
-	"github.com/Dreamacro/clash/adapter/provider"
 	"github.com/Dreamacro/clash/component/trie"
 	C "github.com/Dreamacro/clash/constant"
+	providerType "github.com/Dreamacro/clash/constant/provider"
 	"gopkg.in/yaml.v2"
 	"runtime"
 	"strings"
@@ -56,7 +56,7 @@ func (b Behavior) String() string {
 }
 
 type RuleProvider interface {
-	provider.Provider
+	providerType.Provider
 	Search(metadata *C.Metadata) bool
 	RuleCount() int
 	Behavior() Behavior
@@ -83,7 +83,7 @@ type RulePayload struct {
 	Rules []string `yaml:"payload"`
 }
 
-func NewRuleSetProvider(name string, behavior Behavior, interval time.Duration, vehicle provider.Vehicle) RuleProvider {
+func NewRuleSetProvider(name string, behavior Behavior, interval time.Duration, vehicle providerType.Vehicle) RuleProvider {
 	rp := &ruleSetProvider{
 		behavior: behavior,
 	}
@@ -139,12 +139,12 @@ func (rp *ruleSetProvider) Behavior() Behavior {
 	return rp.behavior
 }
 
-func (rp *ruleSetProvider) VehicleType() provider.VehicleType {
+func (rp *ruleSetProvider) VehicleType() providerType.VehicleType {
 	return rp.vehicle.Type()
 }
 
-func (rp *ruleSetProvider) Type() provider.ProviderType {
-	return provider.Rule
+func (rp *ruleSetProvider) Type() providerType.ProviderType {
+	return providerType.Rule
 }
 
 func (rp *ruleSetProvider) Initial() error {

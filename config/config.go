@@ -16,6 +16,7 @@ import (
 	"github.com/Dreamacro/clash/component/fakeip"
 	"github.com/Dreamacro/clash/component/trie"
 	C "github.com/Dreamacro/clash/constant"
+	providerTypes "github.com/Dreamacro/clash/constant/provider"
 	"github.com/Dreamacro/clash/dns"
 	"github.com/Dreamacro/clash/log"
 	R "github.com/Dreamacro/clash/rule"
@@ -95,7 +96,7 @@ type Config struct {
 	Rules         []C.Rule
 	Users         []auth.AuthUser
 	Proxies       map[string]C.Proxy
-	Providers     map[string]provider.ProxyProvider
+	Providers     map[string]providerTypes.ProxyProvider
 	RuleProviders map[string]*ruleProvider.RuleProvider
 }
 
@@ -274,9 +275,9 @@ func parseGeneral(cfg *RawConfig) (*General, error) {
 	}, nil
 }
 
-func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providersMap map[string]provider.ProxyProvider, err error) {
+func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providersMap map[string]providerTypes.ProxyProvider, err error) {
 	proxies = make(map[string]C.Proxy)
-	providersMap = make(map[string]provider.ProxyProvider)
+	providersMap = make(map[string]providerTypes.ProxyProvider)
 	proxyList := []string{}
 	proxiesConfig := cfg.Proxy
 	groupsConfig := cfg.ProxyGroup
@@ -353,7 +354,7 @@ func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providersMap map[
 
 	// initial compatible provider
 	for _, pd := range providersMap {
-		if pd.VehicleType() != provider.Compatible {
+		if pd.VehicleType() != providerTypes.Compatible {
 			continue
 		}
 
@@ -378,7 +379,7 @@ func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providersMap map[
 		&outboundgroup.GroupCommonOption{
 			Name: "GLOBAL",
 		},
-		[]provider.ProxyProvider{pd},
+		[]providerTypes.ProxyProvider{pd},
 	)
 	proxies["GLOBAL"] = adapter.NewProxy(global)
 	return proxies, providersMap, nil

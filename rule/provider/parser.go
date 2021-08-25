@@ -5,6 +5,7 @@ import (
 	"github.com/Dreamacro/clash/adapter/provider"
 	"github.com/Dreamacro/clash/common/structure"
 	C "github.com/Dreamacro/clash/constant"
+	providerType "github.com/Dreamacro/clash/constant/provider"
 	"time"
 )
 
@@ -36,7 +37,7 @@ func ParseRuleProvider(name string, mapping map[string]interface{}) (RuleProvide
 	}
 
 	path := C.Path.Resolve(schema.Path)
-	var vehicle provider.Vehicle
+	var vehicle providerType.Vehicle
 	switch schema.Type {
 	case "file":
 		vehicle = provider.NewFileVehicle(path)
