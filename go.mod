@@ -10,6 +10,7 @@ require (
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/gorilla/websocket v1.4.2
 	github.com/lucas-clemente/quic-go v0.22.1
+	github.com/insomniacslk/dhcp v0.0.0-20210827173440-b95caade3eac
 	github.com/miekg/dns v1.1.43
 	github.com/oschwald/geoip2-golang v1.5.0
 	github.com/sirupsen/logrus v1.8.1
@@ -17,7 +18,7 @@ require (
 	github.com/xtls/go v0.0.0-20201118062508-3632bf3b7499
 	go.uber.org/atomic v1.9.0
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
-	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
+	golang.org/x/net v0.0.0-20210825183410-e898025ed96a
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2
 	google.golang.org/protobuf v1.26.0
@@ -42,6 +43,7 @@ require (
 	github.com/onsi/ginkgo v1.16.4 // indirect
 	github.com/oschwald/maxminddb-golang v1.8.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/u-root/uio v0.0.0-20210528114334-82958018845c // indirect
 	golang.org/x/text v0.3.6 // indirect
 	golang.org/x/tools v0.1.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
