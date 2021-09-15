@@ -115,6 +115,7 @@ func ServerHandshake(rw io.ReadWriter, authenticator auth.Authenticator) (addr *
 		code = RequestGranted
 	} else {
 		code = RequestIdentdMismatched
+		err = ErrRequestIdentdMismatched
 	}
 
 	var reply [8]byte
@@ -123,7 +124,10 @@ func ServerHandshake(rw io.ReadWriter, authenticator auth.Authenticator) (addr *
 	copy(reply[4:8], dstIP)
 	copy(reply[2:4], dstPort)
 
-	_, err = rw.Write(reply[:])
+	_, wErr := rw.Write(reply[:])
+	if err == nil {
+		err = wErr
+	}
 	return
 }
 
