@@ -16,6 +16,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/xtls/go v0.0.0-20201118062508-3632bf3b7499
+	go.etcd.io/bbolt v1.3.6
 	go.uber.org/atomic v1.9.0
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/net v0.0.0-20210825183410-e898025ed96a
