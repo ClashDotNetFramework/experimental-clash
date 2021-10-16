@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"net/http"
 	"strconv"
 
 	"github.com/Dreamacro/clash/component/dialer"
@@ -19,6 +20,7 @@ import (
 type Trojan struct {
 	*Base
 	instance *trojan.Trojan
+	option   *TrojanOption
 
 	// for gun mux
 	gunTLSConfig *tls.Config
@@ -38,6 +40,34 @@ type TrojanOption struct {
 	UDP            bool        `proxy:"udp,omitempty"`
 	Network        string      `proxy:"network,omitempty"`
 	GrpcOpts       GrpcOptions `proxy:"grpc-opts,omitempty"`
+	WSOpts         WSOptions   `proxy:"ws-opts,omitempty"`
+}
+
+func (t *Trojan) plainStream(c net.Conn) (net.Conn, error) {
+	if t.option.Network == "ws" {
+		host, port, _ := net.SplitHostPort(t.addr)
+		wsOpts := &trojan.WebsocketOption{
+			Host: host,
+			Port: port,
+			Path: t.option.WSOpts.Path,
+		}
+
+		if t.option.SNI != "" {
+			wsOpts.Host = t.option.SNI
+		}
+
+		if len(t.option.WSOpts.Headers) != 0 {
+			header := http.Header{}
+			for key, value := range t.option.WSOpts.Headers {
+				header.Add(key, value)
+			}
+			wsOpts.Headers = header
+		}
+
+		return t.instance.StreamWebsocketConn(c, wsOpts)
+	}
+
+	return t.instance.StreamConn(c)
 }
 
 // StreamConn implements C.ProxyAdapter
@@ -46,7 +76,7 @@ func (t *Trojan) StreamConn(c net.Conn, metadata *C.Metadata) (net.Conn, error) 
 	if t.transport != nil {
 		c, err = gun.StreamGunWithConn(c, t.gunTLSConfig, t.gunConfig)
 	} else {
-		c, err = t.instance.StreamConn(c)
+		c, err = t.plainStream(c)
 	}
 
 	if err != nil {
@@ -120,7 +150,7 @@ func (t *Trojan) ListenPacketContext(ctx context.Context, metadata *C.Metadata) 
 		}
 		defer safeConnClose(c, err)
 		tcpKeepAlive(c)
-		c, err = t.instance.StreamConn(c)
+		c, err = t.plainStream(c)
 		if err != nil {
 			return nil, fmt.Errorf("%s connect error: %w", t.addr, err)
 		}
@@ -158,6 +188,7 @@ func NewTrojan(option TrojanOption) (*Trojan, error) {
 			udp:  option.UDP,
 		},
 		instance: trojan.New(tOption),
+		option:   &option,
 	}
 
 	if option.Network == "grpc" {

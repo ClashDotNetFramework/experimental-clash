@@ -8,11 +8,16 @@ import (
 	"errors"
 	"io"
 	"net"
+	"net/http"
 	"sync"
 
 	"github.com/Dreamacro/clash/common/pool"
 	"github.com/Dreamacro/clash/transport/socks5"
+<<<<<<< HEAD
 	xtls "github.com/xtls/go"
+=======
+	"github.com/Dreamacro/clash/transport/vmess"
+>>>>>>> df3a491 (Feature: support trojan websocket)
 )
 
 const (
@@ -46,6 +51,13 @@ type Option struct {
 	ALPN                []string
 	ServerName          string
 	SkipCertVerify      bool
+}
+
+type WebsocketOption struct {
+	Host    string
+	Port    string
+	Path    string
+	Headers http.Header
 }
 
 type Trojan struct {
@@ -91,6 +103,29 @@ func (t *Trojan) StreamConn(conn net.Conn) (net.Conn, error) {
 
 		return tlsConn, nil
 	}
+}
+
+func (t *Trojan) StreamWebsocketConn(conn net.Conn, wsOptions *WebsocketOption) (net.Conn, error) {
+	alpn := defaultALPN
+	if len(t.option.ALPN) != 0 {
+		alpn = t.option.ALPN
+	}
+
+	tlsConfig := &tls.Config{
+		NextProtos:         alpn,
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: t.option.SkipCertVerify,
+		ServerName:         t.option.ServerName,
+	}
+
+	return vmess.StreamWebsocketConn(conn, &vmess.WebsocketConfig{
+		Host:      wsOptions.Host,
+		Port:      wsOptions.Port,
+		Path:      wsOptions.Path,
+		Headers:   wsOptions.Headers,
+		TLS:       true,
+		TLSConfig: tlsConfig,
+	})
 }
 
 func (t *Trojan) WriteHeader(w io.Writer, command Command, socks5Addr []byte) error {
