@@ -4,12 +4,12 @@ go 1.17
 
 require (
 	github.com/ClashDotNetFramework/go-shadowsocks2 v0.1.8
-	github.com/go-chi/chi/v5 v5.0.3
+	github.com/go-chi/chi/v5 v5.0.5
 	github.com/go-chi/cors v1.2.0
 	github.com/go-chi/render v1.0.1
-	github.com/gofrs/uuid v4.0.0+incompatible
+	github.com/gofrs/uuid v4.1.0+incompatible
 	github.com/gorilla/websocket v1.4.2
-	github.com/insomniacslk/dhcp v0.0.0-20210827173440-b95caade3eac
+	github.com/insomniacslk/dhcp v0.0.0-20211026125128-ad197bcd36fd
 	github.com/lucas-clemente/quic-go v0.22.1
 	github.com/miekg/dns v1.1.43
 	github.com/oschwald/geoip2-golang v1.5.0
@@ -19,11 +19,10 @@ require (
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/atomic v1.9.0
 	go.uber.org/automaxprocs v1.4.0
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
-	golang.org/x/net v0.0.0-20210825183410-e898025ed96a
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	golang.org/x/net v0.0.0-20211105192438-b53810dc28af
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2
-	google.golang.org/protobuf v1.26.0
+	golang.org/x/sys v0.0.0-20211107104306-e0b2ad06fe42
 	gopkg.in/yaml.v2 v2.4.0
 )
 
