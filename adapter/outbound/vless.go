@@ -79,8 +79,16 @@ func (v *Vless) StreamConn(c net.Conn, metadata *C.Metadata) (net.Conn, error) {
 
 		if v.option.TLS {
 			wsOpts.TLS = true
-			wsOpts.SkipCertVerify = v.option.SkipCertVerify
-			wsOpts.ServerName = v.option.ServerName
+			wsOpts.TLSConfig = &tls.Config{
+				ServerName:         host,
+				InsecureSkipVerify: v.option.SkipCertVerify,
+				NextProtos:         []string{"http/1.1"},
+			}
+			if v.option.ServerName != "" {
+				wsOpts.TLSConfig.ServerName = v.option.ServerName
+			} else if host := wsOpts.Headers.Get("Host"); host != "" {
+				wsOpts.TLSConfig.ServerName = host
+			}
 		}
 		c, err = vmess.StreamWebsocketConn(c, wsOpts)
 	default:
@@ -140,7 +148,8 @@ func (v *Vless) DialContext(ctx context.Context, metadata *C.Metadata) (C.Conn, 
 	return NewConn(c, v), err
 }
 
-func (v *Vless) DialUDP(metadata *C.Metadata) (C.PacketConn, error) {
+// ListenPacketContext implements C.ProxyAdapter
+func (v *Vless) ListenPacketContextctx(ctx context.Context, metadata *C.Metadata) (C.PacketConn, error) {
 	if (v.option.Flow == vless.XRO || v.option.Flow == vless.XRD) && metadata.DstPort == "443" {
 		return nil, fmt.Errorf("%s stopped UDP/443", v.option.Flow)
 	}
@@ -154,8 +163,6 @@ func (v *Vless) DialUDP(metadata *C.Metadata) (C.PacketConn, error) {
 		metadata.DstIP = ip
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), C.DefaultTCPTimeout)
-	defer cancel()
 	c, err := dialer.DialContext(ctx, "tcp", v.addr)
 	if err != nil {
 		return nil, fmt.Errorf("%s connect error: %s", v.addr, err.Error())
