@@ -102,17 +102,8 @@ func (t *Trojan) DialContext(ctx context.Context, metadata *C.Metadata) (_ C.Con
 	return NewConn(c, t), err
 }
 
-<<<<<<< HEAD
-// DialUDP implements C.ProxyAdapter
-func (t *Trojan) DialUDP(metadata *C.Metadata) (_ C.PacketConn, err error) {
-	if (t.instance.GetFlow() == trojan.XRD || t.instance.GetFlow() == trojan.XRO) && metadata.DstPort == "443" {
-		return nil, fmt.Errorf("%s stopped UDP/443", t.instance.GetFlow())
-	}
-
-=======
 // ListenPacketContext implements C.ProxyAdapter
 func (t *Trojan) ListenPacketContext(ctx context.Context, metadata *C.Metadata) (_ C.PacketConn, err error) {
->>>>>>> 68753b4 (Chore: contexify ProxyAdapter ListenPacket)
 	var c net.Conn
 
 	// grpc transport
@@ -148,11 +139,11 @@ func NewTrojan(option TrojanOption) (*Trojan, error) {
 	addr := net.JoinHostPort(option.Server, strconv.Itoa(option.Port))
 
 	tOption := &trojan.Option{
-		Password:            option.Password,
-		Flow:                option.Flow,
-		ALPN:                option.ALPN,
-		ServerName:          option.Server,
-		SkipCertVerify:      option.SkipCertVerify,
+		Password:       option.Password,
+		Flow:           option.Flow,
+		ALPN:           option.ALPN,
+		ServerName:     option.Server,
+		SkipCertVerify: option.SkipCertVerify,
 	}
 
 	if option.SNI != "" {
