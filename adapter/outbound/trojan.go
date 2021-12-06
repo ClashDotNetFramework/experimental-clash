@@ -12,7 +12,6 @@ import (
 	C "github.com/Dreamacro/clash/constant"
 	"github.com/Dreamacro/clash/transport/gun"
 	"github.com/Dreamacro/clash/transport/trojan"
-	xtls "github.com/xtls/go"
 
 	"golang.org/x/net/http2"
 )
@@ -33,7 +32,6 @@ type TrojanOption struct {
 	Server         string      `proxy:"server"`
 	Port           int         `proxy:"port"`
 	Password       string      `proxy:"password"`
-	Flow           string      `proxy:"flow,omitempty"`
 	ALPN           []string    `proxy:"alpn,omitempty"`
 	SNI            string      `proxy:"sni,omitempty"`
 	SkipCertVerify bool        `proxy:"skip-cert-verify,omitempty"`
@@ -83,19 +81,7 @@ func (t *Trojan) StreamConn(c net.Conn, metadata *C.Metadata) (net.Conn, error) 
 		return nil, fmt.Errorf("%s connect error: %w", t.addr, err)
 	}
 
-	var tc trojan.Command
-	if xtlsConn, ok := c.(*xtls.Conn); ok {
-		xtlsConn.RPRX = true
-		if t.instance.GetFlow() == trojan.XRD || t.instance.GetFlow() == trojan.XRDU {
-			xtlsConn.DirectMode = true
-			tc = trojan.CommandXRD
-		} else {
-			tc = trojan.CommandXRO
-		}
-	} else {
-		tc = trojan.CommandTCP
-	}
-	err = t.instance.WriteHeader(c, tc, serializesSocksAddr(metadata))
+	err = t.instance.WriteHeader(c, trojan.CommandTCP, serializesSocksAddr(metadata))
 	return c, err
 }
 
@@ -170,7 +156,6 @@ func NewTrojan(option TrojanOption) (*Trojan, error) {
 
 	tOption := &trojan.Option{
 		Password:       option.Password,
-		Flow:           option.Flow,
 		ALPN:           option.ALPN,
 		ServerName:     option.Server,
 		SkipCertVerify: option.SkipCertVerify,

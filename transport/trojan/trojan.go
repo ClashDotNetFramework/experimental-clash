@@ -13,21 +13,12 @@ import (
 
 	"github.com/Dreamacro/clash/common/pool"
 	"github.com/Dreamacro/clash/transport/socks5"
-<<<<<<< HEAD
-	xtls "github.com/xtls/go"
-=======
 	"github.com/Dreamacro/clash/transport/vmess"
->>>>>>> df3a491 (Feature: support trojan websocket)
 )
 
 const (
 	// max packet length
 	maxLength = 8192
-
-	XRO = "xtls-rprx-origin"
-	XRD = "xtls-rprx-direct"
-	XROU = "xtls-rprx-origin-udp443"
-	XRDU = "xtls-rprx-direct-udp443"
 )
 
 var (
@@ -42,17 +33,13 @@ type Command = byte
 var (
 	CommandTCP byte = 1
 	CommandUDP byte = 3
-
-	CommandXRD byte = 0xf0
-	CommandXRO byte = 0xf1
 )
 
 type Option struct {
-	Password            string
-	Flow                string
-	ALPN                []string
-	ServerName          string
-	SkipCertVerify      bool
+	Password       string
+	ALPN           []string
+	ServerName     string
+	SkipCertVerify bool
 }
 
 type WebsocketOption struct {
@@ -67,44 +54,25 @@ type Trojan struct {
 	hexPassword []byte
 }
 
-func (t *Trojan) GetFlow() string {
-	return t.option.Flow
-}
-
 func (t *Trojan) StreamConn(conn net.Conn) (net.Conn, error) {
 	alpn := defaultALPN
 	if len(t.option.ALPN) != 0 {
 		alpn = t.option.ALPN
 	}
 
-	switch t.option.Flow {
-	case XRO, XROU, XRD, XRDU:
-		xtlsConfig := &xtls.Config{
-			NextProtos:         alpn,
-			MinVersion:         xtls.VersionTLS12,
-			InsecureSkipVerify: t.option.SkipCertVerify,
-			ServerName:         t.option.ServerName,
-		}
-		xtlsConn := xtls.Client(conn, xtlsConfig)
-		if err := xtlsConn.Handshake(); err != nil {
-			return nil, err
-		}
-
-		return xtlsConn, nil
-	default:
-		tlsConfig := &tls.Config{
-			NextProtos:         alpn,
-			MinVersion:         tls.VersionTLS12,
-			InsecureSkipVerify: t.option.SkipCertVerify,
-			ServerName:         t.option.ServerName,
-		}
-		tlsConn := tls.Client(conn, tlsConfig)
-		if err := tlsConn.Handshake(); err != nil {
-			return nil, err
-		}
-
-		return tlsConn, nil
+	tlsConfig := &tls.Config{
+		NextProtos:         alpn,
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: t.option.SkipCertVerify,
+		ServerName:         t.option.ServerName,
 	}
+
+	tlsConn := tls.Client(conn, tlsConfig)
+	if err := tlsConn.Handshake(); err != nil {
+		return nil, err
+	}
+
+	return tlsConn, nil
 }
 
 func (t *Trojan) StreamWebsocketConn(conn net.Conn, wsOptions *WebsocketOption) (net.Conn, error) {
