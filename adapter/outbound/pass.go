@@ -18,7 +18,7 @@ func (r *Pass) DialContext(ctx context.Context, metadata *C.Metadata, opts ...di
 }
 
 // ListenPacketContext implements C.ProxyAdapter
-func (r *Pass) ListenPacketContext(metadata *C.Metadata) (C.PacketConn, error) {
+func (r *Pass) ListenPacketContext(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (C.PacketConn, error) {
 	return nil, errors.New("match Pass rule")
 }
 
