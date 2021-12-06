@@ -34,19 +34,22 @@ type Vless struct {
 }
 
 type VlessOption struct {
-	Name           string            `proxy:"name"`
-	Server         string            `proxy:"server"`
-	Port           int               `proxy:"port"`
-	UUID           string            `proxy:"uuid"`
-	UDP            bool              `proxy:"udp,omitempty"`
-	TLS            bool              `proxy:"tls,omitempty"`
-	Network        string            `proxy:"network,omitempty"`
-	WSOpts         WSOptions         `proxy:"ws-opts,omitempty"`
-	WSPath         string            `proxy:"ws-path,omitempty"`
-	WSHeaders      map[string]string `proxy:"ws-headers,omitempty"`
-	SkipCertVerify bool              `proxy:"skip-cert-verify,omitempty"`
-	ServerName     string            `proxy:"servername,omitempty"`
-	Flow           string            `proxy:"flow,omitempty"`
+	BasicOption
+	Name           string    `proxy:"name"`
+	Server         string    `proxy:"server"`
+	Port           int       `proxy:"port"`
+	UUID           string    `proxy:"uuid"`
+	UDP            bool      `proxy:"udp,omitempty"`
+	Network        string    `proxy:"network,omitempty"`
+	Flow           string    `proxy:"flow,omitempty"`
+	TLS            bool      `proxy:"tls,omitempty"`
+	SkipCertVerify bool      `proxy:"skip-cert-verify,omitempty"`
+	ServerName     string    `proxy:"servername,omitempty"`
+	WSOpts         WSOptions `proxy:"ws-opts,omitempty"`
+
+	// TODO: remove these until 2022
+	WSHeaders map[string]string `proxy:"ws-headers,omitempty"`
+	WSPath    string            `proxy:"ws-path,omitempty"`
 }
 
 func (v *Vless) StreamConn(c net.Conn, metadata *C.Metadata) (net.Conn, error) {
@@ -137,8 +140,8 @@ func (v *Vless) StreamConn(c net.Conn, metadata *C.Metadata) (net.Conn, error) {
 	return v.client.StreamConn(c, parseVmessAddr(metadata))
 }
 
-func (v *Vless) DialContext(ctx context.Context, metadata *C.Metadata) (C.Conn, error) {
-	c, err := dialer.DialContext(ctx, "tcp", v.addr)
+func (v *Vless) DialContext(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (C.Conn, error) {
+	c, err := dialer.DialContext(ctx, "tcp", v.addr, v.Base.DialOptions(opts...)...)
 	if err != nil {
 		return nil, fmt.Errorf("%s connect error: %s", v.addr, err.Error())
 	}
@@ -149,7 +152,7 @@ func (v *Vless) DialContext(ctx context.Context, metadata *C.Metadata) (C.Conn, 
 }
 
 // ListenPacketContext implements C.ProxyAdapter
-func (v *Vless) ListenPacketContextctx(ctx context.Context, metadata *C.Metadata) (C.PacketConn, error) {
+func (v *Vless) ListenPacketContextctx(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (C.PacketConn, error) {
 	if (v.option.Flow == vless.XRO || v.option.Flow == vless.XRD) && metadata.DstPort == "443" {
 		return nil, fmt.Errorf("%s stopped UDP/443", v.option.Flow)
 	}
@@ -163,7 +166,7 @@ func (v *Vless) ListenPacketContextctx(ctx context.Context, metadata *C.Metadata
 		metadata.DstIP = ip
 	}
 
-	c, err := dialer.DialContext(ctx, "tcp", v.addr)
+	c, err := dialer.DialContext(ctx, "tcp", v.addr, v.Base.DialOptions(opts...)...)
 	if err != nil {
 		return nil, fmt.Errorf("%s connect error: %s", v.addr, err.Error())
 	}
@@ -195,10 +198,11 @@ func NewVless(option VlessOption) (*Vless, error) {
 
 	return &Vless{
 		Base: &Base{
-			name: option.Name,
-			addr: net.JoinHostPort(option.Server, strconv.Itoa(option.Port)),
-			tp:   C.Vless,
-			udp:  true,
+			name:  option.Name,
+			addr:  net.JoinHostPort(option.Server, strconv.Itoa(option.Port)),
+			tp:    C.Vmess,
+			udp:   option.UDP,
+			iface: option.Interface,
 		},
 		client: client,
 		option: &option,
