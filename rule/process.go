@@ -15,8 +15,8 @@ import (
 var processCache = cache.NewLRUCache(cache.WithAge(2), cache.WithSize(64))
 
 type Process struct {
-	adapter string
-	process string
+	adapter   string
+	process   string
 	fullMatch bool
 }
 
@@ -70,8 +70,8 @@ func NewProcess(process string, adapter string, fullMatch bool) (*Process, error
 	}
 
 	return &Process{
-		adapter: adapter,
-		process: process,
+		adapter:   adapter,
+		process:   process,
 		fullMatch: fullMatch,
 	}, nil
 }

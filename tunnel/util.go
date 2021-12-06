@@ -17,4 +17,3 @@ func safeAssertProxyType(adapter C.Proxy, metadata *C.Metadata, proxyType C.Adap
 		return false
 	}
 }
-

@@ -3,13 +3,14 @@ package provider
 import (
 	"encoding/json"
 	"errors"
+	"runtime"
+	"strings"
+	"time"
+
 	"github.com/Dreamacro/clash/component/trie"
 	C "github.com/Dreamacro/clash/constant"
 	providerType "github.com/Dreamacro/clash/constant/provider"
 	"gopkg.in/yaml.v2"
-	"runtime"
-	"strings"
-	"time"
 )
 
 type Behavior int

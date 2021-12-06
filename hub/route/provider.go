@@ -2,8 +2,9 @@ package route
 
 import (
 	"context"
-	ruleProvider "github.com/Dreamacro/clash/rule/provider"
 	"net/http"
+
+	ruleProvider "github.com/Dreamacro/clash/rule/provider"
 
 	"github.com/Dreamacro/clash/constant/provider"
 	"github.com/Dreamacro/clash/tunnel"

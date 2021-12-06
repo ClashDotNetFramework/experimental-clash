@@ -1,14 +1,15 @@
 package provider_test
 
 import (
+	"net"
+	"testing"
+	"time"
+
 	"github.com/Dreamacro/clash/adapter/provider"
 	"github.com/Dreamacro/clash/constant"
 	"github.com/Dreamacro/clash/rule"
 	ruleProvider "github.com/Dreamacro/clash/rule/provider"
 	"github.com/stretchr/testify/assert"
-	"net"
-	"testing"
-	"time"
 )
 
 func setup() {

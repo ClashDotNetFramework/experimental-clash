@@ -3,11 +3,12 @@ package tunnel
 import (
 	"context"
 	"fmt"
-	ruleProvider "github.com/Dreamacro/clash/rule/provider"
 	"net"
 	"runtime"
 	"sync"
 	"time"
+
+	ruleProvider "github.com/Dreamacro/clash/rule/provider"
 
 	"github.com/Dreamacro/clash/adapter/inbound"
 	"github.com/Dreamacro/clash/component/nat"

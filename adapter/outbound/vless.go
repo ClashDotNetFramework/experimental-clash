@@ -210,7 +210,8 @@ func NewVless(option VlessOption) (*Vless, error) {
 }
 
 func newVlessPacketConn(c net.Conn, addr net.Addr) *vlessPacketConn {
-	return &vlessPacketConn{Conn: c,
+	return &vlessPacketConn{
+		Conn:  c,
 		rAddr: addr,
 		cache: make([]byte, 0, maxLength+2),
 	}
